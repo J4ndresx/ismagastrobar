@@ -105,8 +105,13 @@ export function escucharFrecuentesMdd(cb) {
   return onSnapshot(doc(db, `${base}/menu_del_dia/${MDD_FRECUENTES_DOC}`), (s) => cb(s.exists() ? s.data() : {}), () => cb({}));
 }
 
+/** Guarda la lista de opciones frecuentes (al agregar una opción nueva, para que no se pierda al recargar). */
+export async function guardarFrecuentesMdd(frecuentes) {
+  await setDoc(doc(db, `${base}/menu_del_dia/${MDD_FRECUENTES_DOC}`), { ...frecuentes, actualizado_en: serverTimestamp() });
+}
+
 /** Guarda (y publica si disponible) el Menú del Día. Lanza Error con un mensaje legible si falta algo.
- *  Al publicar, lo elegido se suma a las opciones frecuentes (mismo lote). */
+ *  Lo elegido se suma a las opciones frecuentes (mismo lote), se publique o no. */
 export async function guardarMenuDelDia(datos, frecuentes = {}) {
   const menu = armarMenuDelDia(datos); // valida y deja la fecha de hoy (Bogotá)
   const u = auth.currentUser;
@@ -117,9 +122,7 @@ export async function guardarMenuDelDia(datos, frecuentes = {}) {
     actualizado_por: u?.uid || null,
     actualizado_por_nombre: u?.displayName || '',
   });
-  if (menu.disponible) {
-    lote.set(doc(db, `${base}/menu_del_dia/${MDD_FRECUENTES_DOC}`), { ...actualizarFrecuentes(frecuentes, menu), actualizado_en: serverTimestamp() });
-  }
+  lote.set(doc(db, `${base}/menu_del_dia/${MDD_FRECUENTES_DOC}`), { ...actualizarFrecuentes(frecuentes, menu), actualizado_en: serverTimestamp() });
   await lote.commit();
 }
 

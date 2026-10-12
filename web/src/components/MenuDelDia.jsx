@@ -5,7 +5,7 @@
 // Datos: restaurantes/{rid}/menu_del_dia/actual y /frecuentes (ver shared/menuDelDia.js).
 import { useEffect, useMemo, useState } from 'react';
 import {
-  MDD_GRUPOS, MDD_MAX_OPCIONES, hoyBogota, menuDelDiaVigente, normalizarLista, opcionesParaElegir, separarOpciones, slugOpcion,
+  MDD_MAX_OPCIONES, actualizarFrecuentes, hoyBogota, menuDelDiaVigente, normalizarLista, opcionesParaElegir, separarOpciones, slugOpcion,
 } from '@shared/menuDelDia.js';
 import * as api from '../data/api';
 import { IconPlus, IconX } from './ui';
@@ -28,7 +28,7 @@ const IconCheck = (p) => (
 const conPendientes = (form, textos) =>
   Object.fromEntries(GRUPOS.map(({ campo }) => [campo, normalizarLista([...form[campo], ...separarOpciones(textos[campo])])]));
 
-function Grupo({ paso, grupo, valor, opciones, texto, setTexto, onChange }) {
+function Grupo({ paso, grupo, valor, opciones, texto, setTexto, onChange, onNuevas }) {
   const ids = new Set(valor.map((o) => o.id));
   const lleno = valor.length >= MDD_MAX_OPCIONES;
   // Lo escrito a mano hoy que no está en las opciones va primero, para que se vea marcado.
@@ -43,6 +43,7 @@ function Grupo({ paso, grupo, valor, opciones, texto, setTexto, onChange }) {
     const nuevas = separarOpciones(texto);
     if (!nuevas.length) return;
     onChange(normalizarLista([...valor, ...nuevas]));
+    onNuevas(nuevas); // queda guardada en la lista desde ya (no hay que publicar para no perderla)
     setTexto('');
   };
 
@@ -126,6 +127,17 @@ export default function MenuDelDia() {
   const cambiar = (campo) => (valor) => { editar(); setForm((f) => ({ ...f, [campo]: valor })); };
   const setTexto = (campo) => (t) => { editar(); setTextos((x) => ({ ...x, [campo]: t })); };
   const limpiar = () => { editar(); setForm(VACIO); setTextos(SIN_TEXTO); };
+  // Opción escrita a mano: se guarda de una vez en las frecuentes de Firestore.
+  const recordar = (campo) => async (nuevas) => {
+    try {
+      await api.guardarFrecuentesMdd(actualizarFrecuentes(frecuentes, { [campo]: nuevas }));
+    } catch (err) {
+      console.error(err);
+      setEstado({ tipo: 'error', texto: err?.code === 'permission-denied'
+        ? 'No se pudo guardar la opción en la lista. Falta publicar las reglas de Firestore (corre desplegar.bat completo).'
+        : 'No se pudo guardar la opción en la lista. Revisa la conexión.' });
+    }
+  };
 
   const final = conPendientes(form, textos);
   const faltan = GRUPOS.filter((g) => final[g.campo].length === 0).map((g) => g.nombre.toLowerCase());
@@ -176,7 +188,7 @@ export default function MenuDelDia() {
 
       <div className="grid gap-4 md:grid-cols-2">
         {GRUPOS.map((g, i) => (
-          <Grupo key={g.campo} paso={i + 1} grupo={g} valor={form[g.campo]} opciones={opciones[g.campo]} texto={textos[g.campo]} setTexto={setTexto(g.campo)} onChange={cambiar(g.campo)} />
+          <Grupo key={g.campo} paso={i + 1} grupo={g} valor={form[g.campo]} opciones={opciones[g.campo]} texto={textos[g.campo]} setTexto={setTexto(g.campo)} onChange={cambiar(g.campo)} onNuevas={recordar(g.campo)} />
         ))}
       </div>
 

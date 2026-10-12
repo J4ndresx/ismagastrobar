@@ -139,9 +139,13 @@ export function escucharFrecuentesMdd(cb) {
   setTimeout(f, 100);
   return () => oyentesMenu.delete(f);
 }
+export async function guardarFrecuentesMdd(frecuentes) {
+  frecuentesDemo = frecuentes;
+  avisarMenu();
+}
 export async function guardarMenuDelDia(datos, frecuentes = {}) {
   mddDemo = armarMenuDelDia(datos);
-  if (mddDemo.disponible) frecuentesDemo = actualizarFrecuentes(frecuentes, mddDemo);
+  frecuentesDemo = actualizarFrecuentes(frecuentes, mddDemo);
   avisarMenu();
 }
 export function escucharCatalogo(cb) {
