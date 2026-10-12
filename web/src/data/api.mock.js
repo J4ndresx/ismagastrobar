@@ -2,7 +2,7 @@
 // Simula la Cloud Function (número + comandas por zona) y el puente de
 // impresión (impreso / error), para poder probar todo el flujo sin Firebase.
 import { RID, CATEGORIAS, GRUPOS_OPCIONES, MENU_ITEMS } from '@shared/menu.seed.js';
-import { aplicarMenuDelDia, armarMenuDelDia, vendible } from '@shared/menuDelDia.js';
+import { aplicarMenuDelDia, armarMenuDelDia, actualizarFrecuentes, vendible } from '@shared/menuDelDia.js';
 import { construirTrabajos, construirCuenta, crearLinea } from '@shared/comandas.js';
 import { VERSION_PUENTE } from '@shared/version.js';
 
@@ -132,8 +132,16 @@ export function escucharMenuDelDia(cb) {
   setTimeout(f, 100);
   return () => oyentesMenu.delete(f);
 }
-export async function guardarMenuDelDia(datos) {
+let frecuentesDemo = { sopaDelDia: ['Ajiaco'], proteinaDelDia: ['Pollo sudado'] };
+export function escucharFrecuentesMdd(cb) {
+  const f = () => cb(frecuentesDemo);
+  oyentesMenu.add(f);
+  setTimeout(f, 100);
+  return () => oyentesMenu.delete(f);
+}
+export async function guardarMenuDelDia(datos, frecuentes = {}) {
   mddDemo = armarMenuDelDia(datos);
+  if (mddDemo.disponible) frecuentesDemo = actualizarFrecuentes(frecuentes, mddDemo);
   avisarMenu();
 }
 export function escucharCatalogo(cb) {

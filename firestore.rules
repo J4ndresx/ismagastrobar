@@ -51,6 +51,13 @@ service cloud.firestore {
           // Para publicarlo (disponible) las cuatro partes deben tener al menos una opción.
           && (request.resource.data.disponible == false
               || (request.resource.data.sopaDelDia.size() >= 1 && request.resource.data.proteinaDelDia.size() >= 1 && request.resource.data.ensaladaDelDia.size() >= 1 && request.resource.data.bebidaDelDia.size() >= 1));
+        // Opciones frecuentes (los chips para armar el menú con un toque): solo el admin, listas de texto cortas.
+        allow create, update: if delRestaurante(rid) && tieneRol('admin') && id == 'frecuentes'
+          && request.resource.data.keys().hasOnly(['sopaDelDia', 'proteinaDelDia', 'ensaladaDelDia', 'bebidaDelDia', 'actualizado_en'])
+          && request.resource.data.get('sopaDelDia', []) is list && request.resource.data.get('sopaDelDia', []).size() <= 30
+          && request.resource.data.get('proteinaDelDia', []) is list && request.resource.data.get('proteinaDelDia', []).size() <= 30
+          && request.resource.data.get('ensaladaDelDia', []) is list && request.resource.data.get('ensaladaDelDia', []).size() <= 30
+          && request.resource.data.get('bebidaDelDia', []) is list && request.resource.data.get('bebidaDelDia', []).size() <= 30;
         allow delete: if false;
       }
 

@@ -97,3 +97,48 @@ export function aplicarMenuDelDia(menu, doc, ahora = new Date()) {
 
 /** Un producto se muestra y se vende si está activo y no está agotado. */
 export const vendible = (item) => item?.activo !== false && item?.agotado !== true;
+
+// ─── Opciones frecuentes (para armar el menú con un toque) ───────────────
+// restaurantes/{rid}/menu_del_dia/frecuentes: { sopaDelDia: ['Sancocho', …], proteinaDelDia: […], … }
+// Cada vez que se publica, lo elegido pasa al principio de su lista. Solo el admin lo escribe.
+export const MDD_FRECUENTES_DOC = 'frecuentes';
+export const MDD_MAX_FRECUENTES = 30;
+
+// Sugerencias de arranque mientras el restaurante no tiene historial propio.
+// Las proteínas y bebidas salen de la carta de ISMA; el dueño puede quitar o sumar las que quiera.
+export const MDD_SUGERENCIAS = {
+  sopaDelDia: ['Sancocho', 'Frijoles', 'Lentejas', 'Sopa de verduras', 'Mondongo', 'Crema de ahuyama'],
+  proteinaDelDia: ['Res', 'Cañón de cerdo', 'Pechuga', 'Chicharrón', 'Hígado encebollado', 'Res molida'],
+  ensaladaDelDia: ['Ensalada fresca', 'Pico de gallo', 'Repollo con zanahoria', 'Remolacha'],
+  bebidaDelDia: ['Jugo del día', 'Guandolo', 'Claro', 'Mazamorra', 'Limonada'],
+};
+
+/** Lista de nombres sin repetidos (ignora tildes y mayúsculas), con tope. */
+function unirNombres(...listas) {
+  const vistos = new Set();
+  const salida = [];
+  for (const n of listas.flat()) {
+    const nombre = String(typeof n === 'string' ? n : n?.nombre || '').trim().replace(/\s+/g, ' ').slice(0, MDD_MAX_LARGO);
+    const id = slugOpcion(nombre);
+    if (!id || vistos.has(id)) continue;
+    vistos.add(id);
+    salida.push(nombre);
+    if (salida.length >= MDD_MAX_FRECUENTES) break;
+  }
+  return salida;
+}
+
+/** Frecuentes después de publicar `menu`: lo de hoy primero, luego lo anterior. */
+export function actualizarFrecuentes(previos, menu) {
+  return Object.fromEntries(
+    Object.values(MDD_GRUPOS).map(({ campo }) => [campo, unirNombres(menu?.[campo] || [], previos?.[campo] || [])]),
+  );
+}
+
+/** Chips para tocar: historial del restaurante + sugerencias de arranque. */
+export function opcionesParaElegir(frecuentes, campo) {
+  return unirNombres(frecuentes?.[campo] || [], MDD_SUGERENCIAS[campo] || []);
+}
+
+/** "Frijoles, lentejas" → ['Frijoles', 'lentejas'] (se puede escribir varias de una vez). */
+export const separarOpciones = (texto) => String(texto).split(/[,;\n]+/).map((s) => s.trim()).filter(Boolean);

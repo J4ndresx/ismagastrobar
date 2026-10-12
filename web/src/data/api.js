@@ -9,7 +9,7 @@ import {
   initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
   collection, doc, query, where, orderBy, onSnapshot, addDoc, getDoc, updateDoc, runTransaction, serverTimestamp, Timestamp, increment, writeBatch, getDocs, setDoc } from 'firebase/firestore';
 import { RID } from '@shared/menu.seed.js';
-import { aplicarMenuDelDia, armarMenuDelDia, vendible, MDD_DOC } from '@shared/menuDelDia.js';
+import { aplicarMenuDelDia, armarMenuDelDia, actualizarFrecuentes, vendible, MDD_DOC, MDD_FRECUENTES_DOC } from '@shared/menuDelDia.js';
 
 const app = initializeApp({
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -100,16 +100,27 @@ export function escucharMenuDelDia(cb) {
   return onSnapshot(doc(db, `${base}/menu_del_dia/${MDD_DOC}`), (s) => cb(s.exists() ? s.data() : null), () => cb(null));
 }
 
-/** Guarda (y publica si disponible) el Menú del Día. Lanza Error con un mensaje legible si falta algo. */
-export async function guardarMenuDelDia(datos) {
+/** Opciones que el dueño ha usado antes (chips para armar el menú con un toque). */
+export function escucharFrecuentesMdd(cb) {
+  return onSnapshot(doc(db, `${base}/menu_del_dia/${MDD_FRECUENTES_DOC}`), (s) => cb(s.exists() ? s.data() : {}), () => cb({}));
+}
+
+/** Guarda (y publica si disponible) el Menú del Día. Lanza Error con un mensaje legible si falta algo.
+ *  Al publicar, lo elegido se suma a las opciones frecuentes (mismo lote). */
+export async function guardarMenuDelDia(datos, frecuentes = {}) {
   const menu = armarMenuDelDia(datos); // valida y deja la fecha de hoy (Bogotá)
   const u = auth.currentUser;
-  await setDoc(doc(db, `${base}/menu_del_dia/${MDD_DOC}`), {
+  const lote = writeBatch(db);
+  lote.set(doc(db, `${base}/menu_del_dia/${MDD_DOC}`), {
     ...menu,
     actualizado_en: serverTimestamp(),
     actualizado_por: u?.uid || null,
     actualizado_por_nombre: u?.displayName || '',
   });
+  if (menu.disponible) {
+    lote.set(doc(db, `${base}/menu_del_dia/${MDD_FRECUENTES_DOC}`), { ...actualizarFrecuentes(frecuentes, menu), actualizado_en: serverTimestamp() });
+  }
+  await lote.commit();
 }
 
 /** Catálogo completo (incluye agotados) para el panel de Agotados. */

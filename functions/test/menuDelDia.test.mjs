@@ -5,6 +5,7 @@ import { crearLinea, validarSeleccion } from '../shared/comandas.js';
 import { verificarPedidoApp } from '../verificarPedido.js';
 import {
   hoyBogota, armarMenuDelDia, menuDelDiaVigente, aplicarMenuDelDia, gruposDesdeMenuDelDia, normalizarLista, vendible, MDD_ITEM_ID,
+  actualizarFrecuentes, opcionesParaElegir, separarOpciones, MDD_MAX_FRECUENTES,
 } from '../shared/menuDelDia.js';
 
 let n = 0;
@@ -122,6 +123,22 @@ await prueba('nube: producto agotado se rechaza con su nombre', async () => {
   const menu = { items: { ...I, churrasco: { ...I.churrasco, agotado: true } }, grupos: G };
   const { verificacion } = await verificarPedidoApp(pedido([l]), { menu });
   assert.match(verificacion.avisos[0], /Churrasco 270g.* agotado/);
+});
+
+
+await prueba('frecuentes: lo publicado va primero, sin repetidos (tildes/mayúsculas) y con tope', () => {
+  const previos = { sopaDelDia: ['Sancocho', 'Ajiaco'], bebidaDelDia: Array.from({ length: 40 }, (_, k) => `Jugo ${k}`) };
+  const hoy = armarMenuDelDia({ sopaDelDia: ['ajiaco', 'Mondongo'], proteinaDelDia: ['Res'], ensaladaDelDia: ['Fresca'], bebidaDelDia: ['Limonada'], disponible: true }, AHORA);
+  const f = actualizarFrecuentes(previos, hoy);
+  assert.deepEqual(f.sopaDelDia, ['ajiaco', 'Mondongo', 'Sancocho']);
+  assert.deepEqual(f.proteinaDelDia, ['Res']);
+  assert.equal(f.bebidaDelDia.length, MDD_MAX_FRECUENTES);
+  assert.equal(f.bebidaDelDia[0], 'Limonada');
+  // Chips: historial primero y luego sugerencias, sin duplicar "Sancocho".
+  const chips = opcionesParaElegir(f, 'sopaDelDia');
+  assert.deepEqual(chips.slice(0, 3), ['ajiaco', 'Mondongo', 'Sancocho']);
+  assert.equal(chips.filter((c) => c.toLowerCase() === 'sancocho').length, 1);
+  assert.deepEqual(separarOpciones('Frijoles, Lentejas;  ,Sopa de pasta'), ['Frijoles', 'Lentejas', 'Sopa de pasta']);
 });
 
 console.log(`\n${n} pruebas de ISMA OK`);
