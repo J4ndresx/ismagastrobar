@@ -1,0 +1,25 @@
+{
+  "rid": "panzzerotty",
+  "firebase": {
+    "apiKey": "<api-key del proyecto>",
+    "authDomain": "<id-del-proyecto>.firebaseapp.com",
+    "projectId": "<id-del-proyecto>",
+    "appId": "<app-id>"
+  },
+  "cuenta": {
+    "email": "impresora@panzzerotty.app",
+    "password": "…"
+  },
+  "impresora": {
+    "id": "mostrador",
+    "nombre": "POS 80mm mostrador",
+    "modo": "windows",
+    "compartida": "POS80",
+    "host": "192.168.1.100",
+    "puerto": 9100,
+    "ancho": 48,
+    "codepage": "cp850",
+    "cortar": true,
+    "pitido": false
+  }
+}

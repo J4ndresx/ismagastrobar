@@ -1,0 +1,18 @@
+{
+  "projects": {
+    "default": "isma-gastro-bar"
+  },
+  "targets": {
+    "isma-gastro-bar": {
+      "hosting": {
+        "pos": [
+          "ismagastrobar-pos"
+        ],
+        "cliente": [
+          "ismagastrobar"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}

@@ -1,0 +1,8 @@
+const firebaseConfig = {
+  apiKey: "AIzaSyBierxLNmjcujT9k-dveo-EHVQwnrPOIxQ",
+  authDomain: "isma-gastro-bar.firebaseapp.com",
+  projectId: "isma-gastro-bar",
+  storageBucket: "isma-gastro-bar.firebasestorage.app",
+  messagingSenderId: "151990894391",
+  appId: "1:151990894391:web:8bc19e7e766cc281b324b2"
+};

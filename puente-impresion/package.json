@@ -1,0 +1,12 @@
+{
+  "name": "panzzerotty-puente-impresion",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "node puente.js",
+    "prueba": "node puente.js --prueba"
+  },
+  "engines": { "node": ">=20" },
+  "dependencies": { "firebase": "^10.14.1" }
+}

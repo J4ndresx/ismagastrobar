@@ -1,0 +1,204 @@
+rules_version = '2';
+
+// Roles por custom claims: { rid: 'jireh2', rol: 'admin' | 'cajero' | 'vendedora' | 'impresora' }
+// (se asignan con scripts/crear-usuario.mjs)
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function delRestaurante(rid) { return request.auth != null && request.auth.token.rid == rid; }
+    function tieneRol(r) { return request.auth.token.rol == r; }
+    function personal(rid) { return delRestaurante(rid) && (tieneRol('vendedora') || tieneRol('cajero') || tieneRol('admin')); }
+    function puente(rid) { return delRestaurante(rid) && tieneRol('impresora'); }
+    function cambia() { return request.resource.data.diff(resource.data).affectedKeys(); }
+    function caja(rid) { return delRestaurante(rid) && (tieneRol('cajero') || tieneRol('admin')); }
+    function rutaMesa(rid, n) { return /databases/$(database)/documents/restaurantes/$(rid)/mesas/$(string(n)); }
+    function rutaPedido(rid, pid) { return /databases/$(database)/documents/restaurantes/$(rid)/pedidos/$(pid); }
+    function rutaTienda(rid) { return /databases/$(database)/documents/restaurantes/$(rid)/config/tienda; }
+
+    // ¿La app del cliente recibe pedidos ahora? (misma cuenta que shared/tienda.js)
+    // Horario: 11:00 a. m. a 11:50 p. m., hora de Bogotá (UTC-5). En milisegundos del día:
+    // 11:00 = 39600000 · 23:50 = 85800000. ⚠️ Si cambia el horario, cambiarlo también en shared/tienda.js.
+    // Si caja/admin la abrió o cerró a mano, manda eso hasta `manual.hasta`.
+    function tiendaAbierta(rid) {
+      let msDia = (request.time.toMillis() - 18000000) % 86400000;
+      let porHorario = msDia >= 39600000 && msDia < 85800000;
+      let t = exists(rutaTienda(rid)) ? get(rutaTienda(rid)).data : {};
+      let man = t.get('manual', null);
+      return (man != null && request.time < man.hasta) ? man.estado == 'abierta' : porHorario;
+    }
+
+    match /restaurantes/{rid} {
+      allow read: if delRestaurante(rid);
+      allow write: if false;
+
+      // Menú: lectura pública (la app del cliente también lo usa); solo el admin edita.
+      match /categorias/{id}      { allow read: if true; allow write: if delRestaurante(rid) && tieneRol('admin'); }
+      match /menu_items/{id}      { allow read: if true; allow write: if delRestaurante(rid) && tieneRol('admin'); }
+      match /grupos_opciones/{id} { allow read: if true; allow write: if delRestaurante(rid) && tieneRol('admin'); }
+
+      // Menú del Día: lectura pública (la app del cliente lo escucha en vivo);
+      // SOLO el admin lo escribe, y con la forma exacta que espera la app.
+      match /menu_del_dia/{id} {
+        allow read: if true;
+        allow create, update: if delRestaurante(rid) && tieneRol('admin') && id == 'actual'
+          && request.resource.data.keys().hasOnly(['sopaDelDia', 'proteinaDelDia', 'ensaladaDelDia', 'bebidaDelDia', 'fecha', 'disponible', 'actualizado_en', 'actualizado_por', 'actualizado_por_nombre'])
+          && request.resource.data.disponible is bool
+          && request.resource.data.fecha is string
+          && request.resource.data.sopaDelDia is list && request.resource.data.sopaDelDia.size() <= 8
+          && request.resource.data.proteinaDelDia is list && request.resource.data.proteinaDelDia.size() <= 8
+          && request.resource.data.ensaladaDelDia is list && request.resource.data.ensaladaDelDia.size() <= 8
+          && request.resource.data.bebidaDelDia is list && request.resource.data.bebidaDelDia.size() <= 8
+          // Para publicarlo (disponible) las cuatro partes deben tener al menos una opción.
+          && (request.resource.data.disponible == false
+              || (request.resource.data.sopaDelDia.size() >= 1 && request.resource.data.proteinaDelDia.size() >= 1 && request.resource.data.ensaladaDelDia.size() >= 1 && request.resource.data.bebidaDelDia.size() >= 1));
+        allow delete: if false;
+      }
+
+      // Pedidos: la vendedora crea y actualiza; los campos del sistema
+      // (número, comandas, impresión) solo los escribe la Cloud Function.
+      match /pedidos/{id} {
+        allow read: if personal(rid);
+        allow create: if
+          request.resource.data.items is list
+          && request.resource.data.items.size() > 0 && request.resource.data.items.size() <= 50
+          && !request.resource.data.keys().hasAny(['numero', 'comandas_generadas', 'impresion', 'zonas_impresion', 'dia', 'aprobado_por', 'cuenta', 'cuenta_impresas', 'cuenta_solicitudes', 'verificacion', 'adiciones', 'adicion_n', 'total_cuenta'])
+          // Enlace de seguimiento (app): código secreto de 22 letras/números.
+          && (!('seguimiento_token' in request.resource.data)
+              || (request.resource.data.seguimiento_token is string && request.resource.data.seguimiento_token.matches('^[A-Za-z0-9]{22}$')))
+          && !request.resource.data.keys().hasAny(['etapa', 'etapas'])
+          // Cuenta abierta (mesa / para llevar del mostrador): nace "abierta", nunca pagada.
+          && (!('cobro' in request.resource.data)
+              || (personal(rid) && request.resource.data.cobro.keys().hasOnly(['estado'])
+                  && request.resource.data.cobro.estado == 'abierta'
+                  && request.resource.data.tipo_entrega in ['mesa', 'llevar']
+                  && !('adicion_de' in request.resource.data)))
+          // Mesa del tablero (1–11): el pedido nace junto con el bloqueo de la mesa (mismo lote).
+          && (!('mesa' in request.resource.data)
+              || ('adicion_de' in request.resource.data)
+              || (request.resource.data.tipo_entrega == 'mesa'
+                  && request.resource.data.mesa is int
+                  && getAfter(rutaMesa(rid, request.resource.data.mesa)).data.pedido_id == id))
+          // Adición a una cuenta abierta: solo personal y solo si esa cuenta sigue abierta.
+          // Si la cuenta es de una mesa, el vendedor solo agrega a SUS mesas (caja y admin a cualquiera).
+          && (!('adicion_de' in request.resource.data)
+              || (personal(rid)
+                  && get(rutaPedido(rid, request.resource.data.adicion_de)).data.cobro.estado == 'abierta'
+                  && (caja(rid)
+                      || !('mesa' in get(rutaPedido(rid, request.resource.data.adicion_de)).data)
+                      || get(rutaMesa(rid, get(rutaPedido(rid, request.resource.data.adicion_de)).data.mesa)).data.por == request.auth.uid)))
+          && (
+            // Mostrador: la vendedora confirma de una.
+            (personal(rid) && request.resource.data.estado in ['confirmado', 'por_aprobar'])
+            // App del cliente (sin cuenta): solo entra "por aprobar" y no imprime
+            // hasta que la vendedora lo acepte.
+            || (request.resource.data.estado == 'por_aprobar'
+                && request.resource.data.origen == 'app'
+                && request.resource.data.cliente.telefono is string
+                && request.resource.data.cliente.telefono.size() == 10
+                && request.resource.data.autorizacion_datos.acepta == true
+                && tiendaAbierta(rid))
+          );
+        allow update: if personal(rid)
+          && !cambia().hasAny(['numero', 'comandas_generadas', 'impresion', 'zonas_impresion', 'dia', 'items', 'cuenta', 'cuenta_impresas', 'verificacion', 'subtotal', 'autorizacion_datos', 'adiciones', 'adicion_n', 'adicion_de', 'total_cuenta', 'seguimiento_token', 'mesa'])
+          // Domicilio "por confirmar" (la app no ubicó la dirección): caja o admin
+          // escribe el valor UNA vez, al aceptar el pedido. Se cobra al entregar.
+          && (!cambia().hasAny(['domicilio_valor', 'total', 'domicilio_confirmado'])
+              || (caja(rid)
+                  && cambia().hasOnly(['estado', 'aprobado_por', 'aprobado_en', 'domicilio_valor', 'total', 'domicilio_confirmado'])
+                  && resource.data.tipo_entrega == 'domicilio'
+                  && resource.data.estado == 'por_aprobar'
+                  && request.resource.data.estado == 'confirmado'
+                  && resource.data.get('domicilio_valor', 0) in [0, null]
+                  && !('domicilio_confirmado' in resource.data)
+                  && request.resource.data.domicilio_valor is int
+                  && request.resource.data.domicilio_valor > 0
+                  && request.resource.data.domicilio_valor <= 50000
+                  && request.resource.data.total == resource.data.subtotal + request.resource.data.domicilio_valor
+                  && request.resource.data.domicilio_confirmado.por == request.auth.uid))
+          // Seguimiento: el personal marca listo / en camino / entregado.
+          && (!cambia().hasAny(['etapa']) || request.resource.data.etapa in ['listo', 'en_camino', 'entregado'])
+          // "Cobrar": solo cajero o admin, una sola vez (abierta → pagada).
+          && (!cambia().hasAny(['cobro'])
+              || (caja(rid)
+                  && resource.data.cobro.estado == 'abierta'
+                  && request.resource.data.cobro.estado == 'pagada'
+                  && request.resource.data.cobro.metodo in ['efectivo', 'transferencia', 'datafono']
+                  && request.resource.data.cobro.por == request.auth.uid))
+          // "Imprimir cuenta": solo se puede sumar de a 1.
+          && (!cambia().hasAny(['cuenta_solicitudes'])
+              || request.resource.data.cuenta_solicitudes == resource.data.get('cuenta_solicitudes', 0) + 1);
+        allow delete: if false;
+      }
+
+      // Mesas del local: quién atiende cada una. pedido_id null = libre.
+      match /mesas/{n} {
+        allow read: if personal(rid);
+        // Tomar una mesa libre: en el mismo lote que crea su pedido.
+        allow create, update: if personal(rid)
+          && (resource == null || resource.data.pedido_id == null)
+          && request.resource.data.pedido_id is string
+          && request.resource.data.por == request.auth.uid
+          && getAfter(rutaPedido(rid, request.resource.data.pedido_id)).data.mesa == int(n)
+          && getAfter(rutaPedido(rid, request.resource.data.pedido_id)).data.creado_por == request.auth.uid;
+        // Pasar la mesa a otro o liberarla: solo caja y admin.
+        allow update: if caja(rid) && resource != null
+          && (request.resource.data.pedido_id == resource.data.pedido_id || request.resource.data.pedido_id == null);
+        allow delete: if false;
+      }
+
+      // Abrir / cerrar la app del cliente: todos la leen; solo caja y admin la cambian.
+      match /config/tienda {
+        allow read: if true;
+        allow write: if caja(rid)
+          && request.resource.data.keys().hasOnly(['manual'])
+          && (request.resource.data.manual == null
+              || (request.resource.data.manual.keys().hasOnly(['estado', 'hasta', 'por', 'por_nombre', 'en'])
+                  && request.resource.data.manual.estado in ['abierta', 'cerrada']
+                  && request.resource.data.manual.hasta is timestamp
+                  && request.resource.data.manual.hasta < request.time + duration.value(2, 'd')
+                  && request.resource.data.manual.por == request.auth.uid));
+      }
+
+      // Seguimiento público del cliente: solo se lee conociendo el código (no se puede listar).
+      match /seguimiento/{token} {
+        allow get: if true;
+        allow list, write: if false;
+      }
+
+      match /trabajos_impresion/{id} {
+        allow read: if personal(rid) || puente(rid);
+        allow create, delete: if false;
+        allow update: if
+          // El puente solo cambia el estado de impresión.
+          (puente(rid) && cambia().hasOnly(['estado', 'impresora_id', 'intentos', 'impreso_en', 'error']))
+          // La vendedora solo puede pedir una reimpresión.
+          || (personal(rid)
+              && resource.data.estado in ['impreso', 'error']
+              && request.resource.data.estado == 'pendiente'
+              && request.resource.data.reimpresiones == resource.data.get('reimpresiones', 0) + 1
+              && cambia().hasOnly(['estado', 'reimpresiones', 'error']));
+      }
+
+      // Perfil de cada usuario (lo crea la función gestionarUsuarios).
+      // Cada quien lee el suyo; el admin los ve todos. La persona solo puede
+      // marcar que ya cambió su contraseña temporal.
+      match /usuarios/{uid} {
+        allow read: if delRestaurante(rid) && (request.auth.uid == uid || tieneRol('admin') || tieneRol('cajero')); // cajero: para "Pasar mesa"
+        allow update: if delRestaurante(rid) && request.auth.uid == uid
+          && cambia().hasOnly(['debe_cambiar_clave', 'clave_cambiada_en'])
+          && request.resource.data.debe_cambiar_clave == false;
+        allow create, delete: if false;
+      }
+
+      match /impresoras/{id} {
+        allow read: if personal(rid) || puente(rid);
+        allow write: if puente(rid);
+      }
+
+      match /contadores/{id} {
+        allow read: if personal(rid);
+        allow write: if false;
+      }
+    }
+  }
+}
