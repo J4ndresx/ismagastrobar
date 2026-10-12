@@ -13,8 +13,9 @@ const IconSearch = (p) => (
 
 const USA_NOMBRE = new Set(['menu_del_dia', 'tradicional', 'proteinas', 'a_la_carta', 'picadas', 'bebidas', 'adicionales', 'parrilla_especiales']);
 // Categorías con tema 'oscuro' (Parrilla y Especiales): fondo negro y precios dorados.
+// Paleta "gris ratón" (como el volante de ISMA): fondo gris oscuro, tarjetas gris medio,
+// títulos crema y precios en pastilla vinotinto.
 const esOscura = (c) => c?.tema === 'oscuro';
-const ORO = 'text-[#D4AF37]';
 const titulo = (s) => s.toLowerCase().replace(/(^|\s)\S/g, (c) => c.toUpperCase());
 const nombrePantalla = (item) => (USA_NOMBRE.has(item.categoria_id) ? item.nombre : titulo(item.nombre_comanda));
 const sinTildes = (s) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
@@ -118,18 +119,18 @@ export default function TomarPedido({ menu, lineas, setLineas, datos, setDatos, 
       <button
         onClick={() => tocarItem(item)}
         disabled={bloqueado}
-        className={`relative flex min-h-[112px] flex-col justify-between rounded-xl border bg-zinc-900 px-4 py-3.5 text-left transition ${bloqueado ? 'cursor-not-allowed border-dashed border-zinc-700 opacity-45' : 'hover:border-zinc-600 hover:bg-zinc-800/80 active:scale-[.98]'} ${enPedido ? 'border-[#D4AF37] ring-1 ring-[#D4AF37]' : 'border-zinc-800'}`}
+        className={`relative flex min-h-[112px] flex-col justify-between rounded-xl border bg-[#47484D] px-4 py-3.5 text-left transition ${bloqueado ? 'cursor-not-allowed border-dashed border-[#5A5B61] opacity-45' : 'hover:bg-[#515257] active:scale-[.98]'} ${enPedido ? 'border-[#F4EEE2] ring-1 ring-[#F4EEE2]' : 'border-[#5A5B61]'}`}
       >
-        <span className="pr-10 text-[13.5px] font-bold uppercase leading-tight tracking-tight text-white">{item.nombre}</span>
-        {item.descripcion && <span className="mt-1 line-clamp-2 text-[11.5px] leading-snug text-zinc-400">{item.descripcion}</span>}
+        <span className="pr-10 text-[13.5px] font-bold uppercase leading-tight tracking-tight text-[#F4EEE2]">{item.nombre}</span>
+        {item.descripcion && <span className="mt-1 line-clamp-2 text-[11.5px] leading-snug text-[#C7C8CC]">{item.descripcion}</span>}
         <span className="mt-2 flex items-center justify-between gap-2">
-          <span className={`text-[16px] font-extrabold tabular-nums ${ORO}`}>{cop(item.precio)}</span>
-          {item.aviso && <span className="rounded-md bg-[#D4AF37]/15 px-1.5 py-0.5 text-[10.5px] font-semibold uppercase tracking-wide text-[#E8CC6E]">{item.aviso}</span>}
+          <span className="rounded-md bg-[#7A1F2B] px-2 py-0.5 text-[15px] font-extrabold tabular-nums text-[#F4EEE2] ring-1 ring-inset ring-[#A3404C]">{cop(item.precio)}</span>
+          {item.aviso && <span className="text-[10.5px] font-semibold uppercase tracking-wide text-[#C7C8CC]">{item.aviso}</span>}
         </span>
         {enPedido > 0 ? (
-          <span className="absolute -right-2 -top-2 grid h-6 min-w-6 place-items-center rounded-full bg-[#D4AF37] px-1.5 text-[12px] font-bold text-zinc-950 ring-2 ring-zinc-950">{enPedido}</span>
+          <span className="absolute -right-2 -top-2 grid h-6 min-w-6 place-items-center rounded-full bg-[#F4EEE2] px-1.5 text-[12px] font-bold text-[#3A3B3F] ring-2 ring-[#3A3B3F]">{enPedido}</span>
         ) : item.tipo === 'configurable' ? (
-          <span className="absolute right-3 top-3 text-[10.5px] font-semibold uppercase tracking-wide text-zinc-500">+ opc</span>
+          <span className="absolute right-3 top-3 text-[10.5px] font-semibold uppercase tracking-wide text-[#9A9BA0]">+ opc</span>
         ) : null}
       </button>
     );
@@ -156,8 +157,8 @@ export default function TomarPedido({ menu, lineas, setLineas, datos, setDatos, 
       {c.tipo_ui === 'pizza_builder' ? (
         <PizzaBuilder key={c.id} items={itemsDe(c.id)} grupos={menu.grupos} onAgregar={agregar} BotonItem={BotonItem} />
       ) : esOscura(c) ? (
-        <div className="rounded-2xl bg-zinc-950 p-3 sm:p-4">
-          <p className={`mb-3 text-[11px] font-semibold uppercase tracking-[.18em] ${ORO}`}>Tarde y noche</p>
+        <div className="rounded-2xl bg-[#3A3B3F] p-3 sm:p-4">
+          <p className="mb-3 text-[11px] font-semibold uppercase tracking-[.18em] text-[#C7C8CC]">Tardes, noches y a la carta</p>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">{itemsDe(c.id).map((i) => <BotonItem key={i.id} item={i} oscuro />)}</div>
         </div>
       ) : (
@@ -212,7 +213,7 @@ export default function TomarPedido({ menu, lineas, setLineas, datos, setDatos, 
                     const on = c.id === catId;
                     const n = lineas.filter((l) => l.categoria_id === c.id).reduce((s, l) => s + l.cantidad, 0);
                     return (
-                      <button key={c.id} onClick={() => setCatId(c.id)} className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-2 text-[13.5px] font-semibold transition ${on ? (esOscura(c) ? 'border-[#D4AF37] bg-zinc-950 text-[#E8CC6E]' : 'border-slate-900 bg-slate-900 text-white') : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'}`}>
+                      <button key={c.id} onClick={() => setCatId(c.id)} className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-2 text-[13.5px] font-semibold transition ${esOscura(c) ? (on ? 'border-[#3A3B3F] bg-[#5C5D62] text-[#F4EEE2]' : 'border-[#9A9BA0] bg-[#E7E7EA] text-[#55565B] hover:bg-[#DCDCDF]') : on ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'}`}>
                         <span className={`h-2 w-2 rounded-full ${ZONA_UI[c.zona_preparacion].dot}`} />
                         {c.nombre}
                         {n > 0 && <span className={`rounded-full px-1.5 text-[11px] font-bold ${on ? 'bg-white text-slate-900' : 'bg-slate-900 text-white'}`}>{n}</span>}
@@ -232,7 +233,7 @@ export default function TomarPedido({ menu, lineas, setLineas, datos, setDatos, 
                   const nItems = menu.items.filter((i) => i.categoria_id === c.id).length;
                   return (
                     <div key={c.id} id={`cat-${c.id}`} className={`scroll-mt-[84px] overflow-hidden rounded-xl border transition ${abierta ? 'border-slate-300' : 'border-slate-200'}`}>
-                      <button onClick={() => abrirCategoria(c.id)} aria-expanded={abierta} className={`flex w-full items-center gap-3 px-3.5 py-3 text-left ${abierta ? 'bg-slate-50' : 'bg-white'}`}>
+                      <button onClick={() => abrirCategoria(c.id)} aria-expanded={abierta} className={`flex w-full items-center gap-3 px-3.5 py-3 text-left ${esOscura(c) ? (abierta ? 'bg-[#5C5D62] text-[#F4EEE2]' : 'bg-[#E7E7EA] text-[#55565B]') : abierta ? 'bg-slate-50' : 'bg-white'}`}>
                         <span className={`h-8 w-1.5 shrink-0 rounded-full ${z.dot}`} />
                         <span className="min-w-0 flex-1">
                           <span className="block text-[14.5px] font-bold uppercase tracking-tight">{c.nombre}</span>
@@ -241,7 +242,7 @@ export default function TomarPedido({ menu, lineas, setLineas, datos, setDatos, 
                         {n > 0 && <span className="grid h-6 min-w-6 place-items-center rounded-full bg-slate-900 px-1.5 text-[12px] font-bold text-white">{n}</span>}
                         <IconChevronRight className={`h-5 w-5 shrink-0 text-slate-400 transition-transform duration-200 ${abierta ? 'rotate-90' : ''}`} />
                       </button>
-                      {abierta && <div className={`border-t p-3 animate-rise ${esOscura(c) ? 'border-zinc-800 bg-zinc-950' : 'border-slate-100 bg-white'}`}>{contenidoCategoria(c)}</div>}
+                      {abierta && <div className={`border-t p-3 animate-rise ${esOscura(c) ? 'border-[#5A5B61] bg-[#3A3B3F]' : 'border-slate-100 bg-white'}`}>{contenidoCategoria(c)}</div>}
                     </div>
                   );
                 })}

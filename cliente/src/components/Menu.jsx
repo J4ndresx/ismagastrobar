@@ -14,6 +14,10 @@ export const IconGrid = ({ className = 'h-5 w-5' }) => (
   </svg>
 );
 
+// Categorías especiales (tema 'oscuro' en Firestore, p. ej. Parrilla y Especiales): se pintan en gris ratón
+// en el menú de categorías y en su sección, para diferenciarlas del resto.
+const esEspecial = (c) => c?.tema === 'oscuro';
+
 /** Portada: saludo corto y cómo funciona el pedido. */
 export function Portada() {
   return (
@@ -39,10 +43,10 @@ export function GridCategorias({ raices, conteo, onIr }) {
       <div className="grid grid-cols-4 gap-x-1 gap-y-2 sm:grid-cols-5 lg:grid-cols-7">
         {raices.map((c) => (
           <button key={c.id} onClick={() => onIr(c.id)} className="group flex flex-col items-center gap-1.5 rounded-2xl p-1.5 text-center transition active:scale-95">
-            <span className="grid aspect-square w-full max-w-[76px] place-items-center rounded-2xl border border-zinc-200 bg-white text-zinc-700 shadow-card transition group-hover:border-zinc-300 group-hover:text-brand-600">
+            <span className={`grid aspect-square w-full max-w-[76px] place-items-center rounded-2xl border shadow-card transition ${esEspecial(c) ? 'border-[#3A3B3F] bg-[#5C5D62] text-[#F4EEE2]' : 'border-zinc-200 bg-white text-zinc-700 group-hover:border-zinc-300 group-hover:text-brand-600'}`}>
               <IconoCategoria id={c.id} className="h-8 w-8" />
             </span>
-            <span className="-mx-1 line-clamp-2 w-[calc(100%+8px)] text-[11px] font-semibold leading-tight tracking-tight text-zinc-700">{c.nombre}</span>
+            <span className={`-mx-1 line-clamp-2 w-[calc(100%+8px)] text-[11px] font-semibold leading-tight tracking-tight ${esEspecial(c) ? 'text-[#55565B]' : 'text-zinc-700'}`}>{c.nombre}</span>
             <span className="sr-only">{conteo[c.id]} productos</span>
           </button>
         ))}
@@ -64,7 +68,7 @@ export function BarraCategorias({ raices, activa, onIr, onVerTodas, refFila }) {
             key={c.id}
             data-cat={c.id}
             onClick={() => onIr(c.id)}
-            className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-[13px] font-semibold transition ${c.id === activa ? 'bg-zinc-900 text-white' : 'bg-zinc-100 text-zinc-600'}`}
+            className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-[13px] font-semibold transition ${esEspecial(c) ? (c.id === activa ? 'bg-[#5C5D62] text-[#F4EEE2]' : 'bg-[#DCDCDF] text-[#55565B] ring-1 ring-inset ring-[#9A9BA0]') : c.id === activa ? 'bg-zinc-900 text-white' : 'bg-zinc-100 text-zinc-600'}`}
           >
             <IconoCategoria id={c.id} className="h-4 w-4" strokeWidth={2} /> {c.nombre}
           </button>
@@ -83,11 +87,11 @@ export function NavLateral({ raices, activa, conteo, onIr }) {
         <button
           key={c.id}
           onClick={() => onIr(c.id)}
-          className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-[14px] transition ${c.id === activa ? 'bg-white font-semibold text-zinc-900 shadow-card ring-1 ring-zinc-200' : 'text-zinc-600 hover:bg-white/70'}`}
+          className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-[14px] transition ${esEspecial(c) ? (c.id === activa ? 'bg-[#5C5D62] font-semibold text-[#F4EEE2] shadow-card' : 'my-0.5 bg-[#E7E7EA] font-medium text-[#55565B] hover:bg-[#DCDCDF]') : c.id === activa ? 'bg-white font-semibold text-zinc-900 shadow-card ring-1 ring-zinc-200' : 'text-zinc-600 hover:bg-white/70'}`}
         >
-          <IconoCategoria id={c.id} className={`h-[18px] w-[18px] shrink-0 ${c.id === activa ? 'text-brand-600' : 'text-zinc-400'}`} />
+          <IconoCategoria id={c.id} className={`h-[18px] w-[18px] shrink-0 ${esEspecial(c) ? (c.id === activa ? 'text-[#F4EEE2]' : 'text-[#7E7F84]') : c.id === activa ? 'text-brand-600' : 'text-zinc-400'}`} />
           <span className="flex-1 truncate">{c.nombre}</span>
-          <span className="text-[12px] tabular-nums text-zinc-400">{conteo[c.id]}</span>
+          <span className={`text-[12px] tabular-nums ${esEspecial(c) && c.id === activa ? 'text-[#C7C8CC]' : 'text-zinc-400'}`}>{conteo[c.id]}</span>
         </button>
       ))}
     </nav>
@@ -104,8 +108,8 @@ export function SheetCategorias({ raices, activa, conteo, onIr, onCerrar }) {
       </div>
       <div className="grid grid-cols-2 gap-2 overflow-y-auto px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-2">
         {raices.map((c) => (
-          <button key={c.id} onClick={() => onIr(c.id)} className={`flex items-center gap-3 rounded-2xl border px-3 py-3 text-left transition active:scale-[.98] ${c.id === activa ? 'border-brand-600 bg-brand-50/60' : 'border-zinc-200 bg-white'}`}>
-            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-zinc-100 text-zinc-700"><IconoCategoria id={c.id} className="h-5 w-5" /></span>
+          <button key={c.id} onClick={() => onIr(c.id)} className={`flex items-center gap-3 rounded-2xl border px-3 py-3 text-left transition active:scale-[.98] ${esEspecial(c) ? (c.id === activa ? 'border-[#3A3B3F] bg-[#DCDCDF]' : 'border-[#9A9BA0] bg-[#EDEDEF]') : c.id === activa ? 'border-brand-600 bg-brand-50/60' : 'border-zinc-200 bg-white'}`}>
+            <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${esEspecial(c) ? 'bg-[#5C5D62] text-[#F4EEE2]' : 'bg-zinc-100 text-zinc-700'}`}><IconoCategoria id={c.id} className="h-5 w-5" /></span>
             <span className="min-w-0">
               <span className="block truncate text-[14px] font-semibold leading-tight">{c.nombre}</span>
               <span className="text-[12px] text-zinc-500">{conteo[c.id]} opciones</span>
@@ -139,24 +143,21 @@ export function Seccion({ cat, bloques, esPizza, nombreDe, onProducto, onArmarPi
   );
 }
 
-// Precios dorados de las secciones en modo oscuro (Parrilla y Especiales).
-const ORO = '#D4AF37';
-
-/** Sección en modo oscuro: fondo negro/gris y precios en dorado. */
+/** Sección "gris ratón" (Parrilla y Especiales), con los colores del volante de ISMA. */
 function SeccionOscura({ cat, bloques, nombreDe, onProducto }) {
   return (
-    <section id={`cat-${cat.id}`} data-seccion={cat.id} className="scroll-mt-[128px] rounded-3xl bg-zinc-950 p-4 text-white shadow-pop sm:p-5 lg:scroll-mt-[88px]">
+    <section id={`cat-${cat.id}`} data-seccion={cat.id} className="scroll-mt-[128px] rounded-3xl bg-[#3A3B3F] p-4 text-[#F4EEE2] shadow-pop sm:p-5 lg:scroll-mt-[88px]">
       <div className="mb-4 flex items-center gap-2.5">
-        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl text-zinc-950" style={{ background: ORO }}><IconoCategoria id={cat.id} className="h-5 w-5" /></span>
+        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#7A1F2B] text-[#F4EEE2] ring-1 ring-inset ring-[#A3404C]"><IconoCategoria id={cat.id} className="h-5 w-5" /></span>
         <div>
           <h2 className="text-[21px] font-extrabold leading-tight tracking-tight">{cat.nombre}</h2>
-          <p className="text-[11px] font-semibold uppercase tracking-[.18em]" style={{ color: ORO }}>Tarde y noche</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[.18em] text-[#C7C8CC]">Tardes, noches y a la carta</p>
         </div>
       </div>
       {bloques.grupos.map((g) => (
         <div key={g.id || 'todo'} className="mt-3 first:mt-0">
-          {g.nombre && <p className="mb-2 mt-4 text-[12px] font-semibold uppercase tracking-wider text-zinc-500">{g.nombre}</p>}
-          <div className="divide-y divide-zinc-800 overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900">
+          {g.nombre && <p className="mb-2 mt-4 text-[12px] font-semibold uppercase tracking-wider text-[#9A9BA0]">{g.nombre}</p>}
+          <div className="divide-y divide-[#5A5B61] overflow-hidden rounded-2xl border border-[#5A5B61] bg-[#47484D]">
             {g.items.map((i) => <FilaProductoOscura key={i.id} item={i} nombre={nombreDe(i)} onClick={() => onProducto(i)} />)}
           </div>
         </div>
@@ -167,16 +168,16 @@ function SeccionOscura({ cat, bloques, nombreDe, onProducto }) {
 
 function FilaProductoOscura({ item, nombre, onClick }) {
   return (
-    <button onClick={onClick} className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition hover:bg-zinc-800/70 active:bg-zinc-800">
+    <button onClick={onClick} className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition hover:bg-[#515257] active:bg-[#5A5B61]">
       <span className="min-w-0 flex-1">
-        <span className="block text-[15px] font-semibold leading-tight text-white">{nombre}</span>
-        {item.descripcion && <span className="mt-0.5 block text-[13px] leading-snug text-zinc-400">{item.descripcion}</span>}
-        <span className="mt-1.5 flex flex-wrap items-center gap-2">
-          <span className="text-[15px] font-bold tabular-nums" style={{ color: ORO }}>{formatCOP(item.precio)}</span>
-          {item.aviso && <span className="rounded-md px-1.5 py-0.5 text-[11px] font-semibold text-[#E8CC6E] ring-1 ring-inset ring-[#D4AF37]/40">{item.aviso}</span>}
+        <span className="block text-[15px] font-bold uppercase leading-tight tracking-wide text-[#F4EEE2]">{nombre}</span>
+        {item.descripcion && <span className="mt-0.5 block text-[13px] leading-snug text-[#C7C8CC]">{item.descripcion}</span>}
+        <span className="mt-2 flex flex-wrap items-center gap-2">
+          <span className="rounded-lg bg-[#7A1F2B] px-2.5 py-0.5 text-[15px] font-bold tabular-nums text-[#F4EEE2] ring-1 ring-inset ring-[#A3404C]">{formatCOP(item.precio)}</span>
+          {item.aviso && <span className="text-[11px] font-semibold uppercase tracking-wide text-[#C7C8CC]">{item.aviso}</span>}
         </span>
       </span>
-      <span className="inline-flex shrink-0 items-center gap-1 rounded-full px-3.5 py-2 text-[13px] font-semibold text-zinc-950 shadow-sm" style={{ background: ORO }}>
+      <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#F4EEE2] px-3.5 py-2 text-[13px] font-semibold text-[#3A3B3F] shadow-sm">
         <IconPlus className="h-3.5 w-3.5" strokeWidth={3} /> Agregar
       </span>
     </button>

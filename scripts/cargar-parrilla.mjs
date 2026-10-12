@@ -1,5 +1,5 @@
-// Carga SOLO la sección "Parrilla y Especiales" en Firestore (categoría, grupo
-// de opciones "Corte" y sus 6 platos). No toca las demás categorías ni productos.
+// Carga SOLO la sección "Parrilla y Especiales" en Firestore (categoría, grupos
+// de opciones "Corte" y "Carne" y sus 7 platos). No toca las demás categorías ni productos.
 //   cd scripts
 //   GOOGLE_APPLICATION_CREDENTIALS=clave-servicio.json node cargar-parrilla.mjs
 // Con el emulador: FIRESTORE_EMULATOR_HOST=localhost:8080 GCLOUD_PROJECT=isma-gastro-bar node cargar-parrilla.mjs

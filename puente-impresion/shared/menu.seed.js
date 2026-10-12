@@ -24,7 +24,7 @@ export const PRECIOS = {
   ensalada: 0, pico_de_gallo: 0,
   // Parrilla y Especiales (tarde/noche)
   patacon_montanero_isma: 22000, salchipapa_especial: 22000, hamburguesa_artesanal: 27000,
-  canon_campestre: 24000, asado_premium: 38000, picada_paisa_especial: 40000,
+  chuzo_cerdo_pollo: 24000, canon_campestre: 24000, asado_premium: 38000, picada_paisa_especial: 40000,
 };
 
 // ─── Zonas de preparación (a dónde se imprime cada comanda) ────────────
@@ -57,6 +57,7 @@ export const GRUPOS_OPCIONES = [
   { id: 'acompanamiento', nombre: 'Acompañamiento', opciones: [op('Papas'), op('Yuca'), op('Ensalada')] },
   { id: 'porcion_picada', nombre: 'Porción', opciones: [op('Para 2 personas')] },
   { id: 'corte_asado', nombre: 'Corte', opciones: [op('Punta de anca'), op('Churrasco')] },
+  { id: 'carne_chuzo', nombre: 'Carne', opciones: [op('Cerdo'), op('Pollo')] },
 ];
 
 // ─── Ítems ─────────────────────────────────────────────────────────────
@@ -136,6 +137,9 @@ item(PE, 'Salchipapa Especial', { id: 'salchipapa_especial', nombre_comanda: 'SA
   descripcion: 'Papas a la francesa, trozos de pechuga de cerdo, trozos de chorizo de ternera, huevo, queso y salsas.' });
 item(PE, 'Hamburguesa Artesanal', { id: 'hamburguesa_artesanal', nombre_comanda: 'HAMBURGUESA ARTESANAL',
   descripcion: 'Pan artesanal, gratinada lechuga, carne 150g, tocineta, salsa de la casa, papas a la francesa.' });
+item(PE, 'Chuzo de Cerdo / Pollo', { id: 'chuzo_cerdo_pollo', nombre_comanda: 'CHUZO',
+  descripcion: 'Papas a la francesa, ensalada mixta y salsas.',
+  grupos_opciones: [g('carne_chuzo', 'Carne', 1, 1)] });
 item(PE, 'Cañón Campestre', { id: 'canon_campestre', nombre_comanda: 'CANON CAMPESTRE',
   descripcion: 'Papas a la francesa, arroz, ensalada y ensalada.' });
 item(PE, 'Asado Premium', { id: 'asado_premium', nombre_comanda: 'ASADO PREMIUM 270G',
