@@ -2,7 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { crearLinea, resumenLinea } from '@shared/comandas.js';
 import PizzaWizard, { esTamanoPizza } from './components/PizzaWizard';
 import CarritoContenido from './components/Carrito';
-import { Portada, GridCategorias, BarraCategorias, NavLateral, SheetCategorias, Seccion, FilaProducto, IconSearch } from './components/Menu';
+import Home from './components/Home';
+import { BarraCategorias, NavLateral, SheetCategorias, Seccion, FilaProducto, IconSearch } from './components/Menu';
 import ProductoSheet from './components/ProductoSheet';
 import CompletarDatosCliente from './components/CompletarDatosCliente';
 import { NEGOCIO } from './config/negocio';
@@ -283,7 +284,7 @@ export default function App() {
         <main className="min-w-0 space-y-7">
           <BannerPedidoActivo onVer={abrirSeguimiento} />
           {!tienda.abierta && <AvisoCerrado aviso={tienda.aviso} />}
-          <Portada />
+          <Home ref={refGrid} raices={raices} listo={!!menu} onIr={irA} />
           <Pista id="menu" paso={1}>
             <b>¿Primera vez?</b> Toca <b>Agregar</b> en lo que quieras. Las pizzas se arman eligiendo el tamaño y los sabores.
             Cuando termines, toca <b>Ver mi pedido</b>.
@@ -310,7 +311,6 @@ export default function App() {
             </section>
           ) : (
             <>
-              <div ref={refGrid} className="lg:hidden"><GridCategorias raices={raices} conteo={conteo} onIr={irA} /></div>
               {raices.map((c) => (
                 <Seccion
                   key={c.id}
