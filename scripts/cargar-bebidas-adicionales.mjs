@@ -36,10 +36,8 @@ if (sinPrecio.length) {
 }
 if (prueba) { console.log('\n(Prueba: no se escribió nada.)'); process.exit(0); }
 
-const { initializeApp } = await import('firebase-admin/app');
-const { getFirestore } = await import('firebase-admin/firestore');
-initializeApp(process.env.GCLOUD_PROJECT ? { projectId: process.env.GCLOUD_PROJECT } : undefined);
-const db = getFirestore();
+const { conectarFirestore } = await import('./firebaseAdmin.mjs');
+const db = await conectarFirestore();
 const base = db.doc(`restaurantes/${RID}`);
 
 const docs = [
