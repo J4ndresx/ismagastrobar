@@ -22,7 +22,14 @@ const mdd = (extra = {}) => armarMenuDelDia({ sopaDelDia: ['Sancocho de gallina'
 
 await prueba('seed: estructura coherente (categorías, grupos, precios, modificadores del cliente)', () => {
   const cats = new Set(CATEGORIAS.map((c) => c.id));
-  assert.deepEqual([...cats], ['menu_del_dia', 'tradicional', 'proteinas', 'a_la_carta', 'picadas', 'bebidas', 'adicionales', 'parrilla_especiales']);
+  assert.deepEqual(CATEGORIAS.filter((c) => !c.parent_id).map((c) => c.id), ['menu_del_dia', 'tradicional', 'proteinas', 'a_la_carta', 'picadas', 'bebidas', 'adicionales', 'parrilla_especiales']);
+  // Subcategorías: cuelgan de una categoría raíz, y en Bebidas/Adicionales todo producto tiene la suya.
+  for (const c of CATEGORIAS.filter((x) => x.parent_id)) assert.ok(cats.has(c.parent_id) && !CATEGORIAS.find((x) => x.id === c.parent_id).parent_id, c.id);
+  for (const i of MENU_ITEMS.filter((x) => ['bebidas', 'adicionales'].includes(x.categoria_id))) {
+    const sub = CATEGORIAS.find((c) => c.id === i.subcategoria_id);
+    assert.equal(sub?.parent_id, i.categoria_id, `${i.id} sin subcategoría válida`);
+  }
+  assert.equal(CATEGORIAS.find((c) => c.id === 'bebidas_del_dia').dinamica, true);
   for (const i of MENU_ITEMS) {
     assert.ok(cats.has(i.categoria_id), i.id);
     for (const r of i.grupos_opciones) assert.ok(G[r.grupo_id] || r.grupo_id.startsWith('mdd_'), `${i.id} → ${r.grupo_id}`);
@@ -33,7 +40,9 @@ await prueba('seed: estructura coherente (categorías, grupos, precios, modifica
   assert.deepEqual(G.porcion_picada.opciones.map((o) => o.nombre), ['Para 2 personas']);
   assert.deepEqual(MENU_ITEMS.filter((i) => i.categoria_id === 'tradicional').map((i) => i.nombre), ['Bandejita paisa', 'Cazuela', 'Bandeja paisa']);
   assert.deepEqual(MENU_ITEMS.filter((i) => i.categoria_id === 'proteinas').map((i) => i.nombre), ['Res', 'Cañón de cerdo', 'Pechuga', 'Chicharrón', 'Hígado encebollado', 'Res molida']);
-  assert.deepEqual(MENU_ITEMS.filter((i) => i.categoria_id === 'bebidas').map((i) => i.nombre), ['Claro', 'Guandolo', 'Mazamorra', 'Jugo del día']);
+  // Las bebidas originales se conservan (mismos ids) dentro de "Jugos y Bebidas del Día".
+  for (const id of ['claro', 'guandolo', 'mazamorra', 'jugo_del_dia']) assert.equal(I[id]?.subcategoria_id, 'bebidas_del_dia', id);
+  assert.equal(I.ensalada?.subcategoria_id, 'adic_acompanamientos');
 });
 
 await prueba('fecha de Bogotá: a las 11 p. m. todavía es "hoy", a las 12:01 a. m. ya es el día siguiente', () => {

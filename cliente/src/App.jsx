@@ -96,7 +96,7 @@ export default function App() {
     const otros = items.filter((i) => !esTamanoPizza(i));
     const subs = menu.categorias.filter((c) => c.parent_id === catId).sort((a, b) => a.orden - b.orden);
     const grupos = subs.length
-      ? subs.map((sc) => ({ id: sc.id, nombre: sc.nombre, items: otros.filter((i) => i.subcategoria_id === sc.id) }))
+      ? subs.map((sc) => ({ id: sc.id, nombre: sc.nombre, dinamica: sc.dinamica === true, items: otros.filter((i) => i.subcategoria_id === sc.id) }))
       : [{ id: null, nombre: tamanos.length && otros.length ? 'Especiales' : '', items: otros }];
     return { tamanos, grupos: grupos.filter((g) => g.items.length) };
   };
@@ -266,6 +266,7 @@ export default function App() {
           {!tienda.abierta && <AvisoCerrado aviso={tienda.aviso} />}
           {catAbierta ? (
             <VistaCategoria
+              key={catAbierta}
               cat={raices.find((c) => c.id === catAbierta)}
               bloques={bloquesDe(catAbierta)}
               nombreDe={nombreCliente}

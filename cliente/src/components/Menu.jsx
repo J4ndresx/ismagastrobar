@@ -133,7 +133,12 @@ export function Seccion({ cat, bloques, esPizza, nombreDe, onProducto, onArmarPi
       {esPizza && <BloquePizza tamanos={bloques.tamanos} onArmar={onArmarPizza} />}
       {bloques.grupos.map((g) => (
         <div key={g.id || 'todo'} className="mt-3 first:mt-0">
-          {g.nombre && <p className="mb-2 mt-4 text-[12px] font-semibold uppercase tracking-wider text-zinc-400">{g.nombre}</p>}
+          {g.nombre && (
+            <p className="mb-2 mt-4 flex items-center gap-2 text-[12px] font-semibold uppercase tracking-wider text-zinc-400">
+              {g.nombre}
+              {g.dinamica && <span className="rounded-full bg-brand-600 px-1.5 py-px text-[10px] font-bold tracking-wide text-white">Hoy</span>}
+            </p>
+          )}
           <div className="card divide-y divide-zinc-100 overflow-hidden">
             {g.items.map((i) => <FilaProducto key={i.id} item={i} nombre={nombreDe(i)} onClick={() => onProducto(i)} />)}
           </div>
