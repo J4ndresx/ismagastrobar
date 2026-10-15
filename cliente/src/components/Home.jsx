@@ -132,7 +132,7 @@ function Tarjeta({ t, catId, listo, onIr, ancho = false }) {
       disabled={!activa}
       aria-label={aviso ? `${t.nombre} (${aviso.toLowerCase()})` : `Ver ${t.nombre}`}
       className={`group relative flex rounded-2xl border bg-white text-center transition duration-200
-        ${ancho ? 'col-span-3 flex-row items-center justify-center gap-4 px-5 py-4' : 'aspect-[4/5] flex-col items-center justify-center gap-2.5 px-1.5 py-3 sm:aspect-square'}
+        ${ancho ? 'col-span-3 flex-row items-center justify-center gap-4 px-5 py-4 lg:py-5' : 'aspect-[4/5] flex-col items-center justify-center gap-2.5 px-1.5 py-3 sm:aspect-square lg:aspect-[6/5] lg:gap-3.5'}
         ${activa ? 'border-zinc-200 shadow-[0_1px_2px_rgba(16,24,40,.05),0_4px_14px_-6px_rgba(16,24,40,.12)] hover:-translate-y-0.5 hover:border-brand-600 hover:shadow-[0_10px_24px_-10px_rgba(200,16,46,.35)] active:translate-y-0 active:scale-[.97]' : 'border-dashed border-zinc-300 bg-zinc-50/60'}
         ${!listo ? 'animate-pulse' : ''}`}
     >
@@ -140,13 +140,13 @@ function Tarjeta({ t, catId, listo, onIr, ancho = false }) {
         <span className="absolute -top-2 left-1/2 -translate-x-1/2 rounded-full bg-brand-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-sm">Hoy</span>
       )}
       <span
-        className={`grid shrink-0 place-items-center rounded-full transition ${ancho ? 'h-14 w-[108px]' : 'h-[60px] w-[60px] sm:h-[68px] sm:w-[68px]'} ${activa ? 'text-zinc-900 group-hover:text-brand-600' : 'text-zinc-400'}`}
+        className={`grid shrink-0 place-items-center rounded-full transition ${ancho ? 'h-14 w-[108px]' : 'h-[60px] w-[60px] sm:h-[72px] sm:w-[72px] lg:h-[84px] lg:w-[84px]'} ${activa ? 'text-zinc-900 group-hover:text-brand-600' : 'text-zinc-400'}`}
         style={{ background: activa ? '#FBF6E9' : '#F1F1F3', boxShadow: activa ? `inset 0 0 0 1.5px ${ORO}55` : 'none' }}
       >
-        <Svg ancho={ancho} className={ancho ? 'h-10 w-[72px]' : 'h-10 w-10 sm:h-11 sm:w-11'}>{ICONOS[t.clave]}</Svg>
+        <Svg ancho={ancho} className={ancho ? 'h-10 w-[72px]' : 'h-10 w-10 sm:h-12 sm:w-12 lg:h-14 lg:w-14'}>{ICONOS[t.clave]}</Svg>
       </span>
       <span className="min-w-0">
-        <span className={`block font-extrabold uppercase leading-tight tracking-tight ${ancho ? 'text-[15px]' : 'text-[11.5px] sm:text-[13px]'} ${activa ? 'text-zinc-900' : 'text-zinc-400'}`}>
+        <span className={`block font-extrabold uppercase leading-tight tracking-tight ${ancho ? 'text-[15px] lg:text-[16px]' : 'text-[11.5px] sm:text-[13.5px] lg:text-[15px]'} ${activa ? 'text-zinc-900' : 'text-zinc-400'}`}>
           {t.nombre}
         </span>
         {aviso && <span className="mt-0.5 block text-[10.5px] font-semibold text-zinc-400">{aviso}</span>}
@@ -160,14 +160,14 @@ function Tarjeta({ t, catId, listo, onIr, ancho = false }) {
  * @param raices  categorías visibles (las mismas que usa el resto de la app: activas y con productos)
  * @param listo   false mientras carga el menú (las tarjetas se ven en espera, sin "Pronto")
  * @param onIr    navegación existente de la app: irA(categoriaId)
- * El ref se pone en la cuadrícula: App lo usa para mostrar la barra fija de categorías al bajar.
+ * (El ref, opcional, apunta a la cuadrícula.)
  */
 const Home = forwardRef(function Home({ raices = [], listo = true, onIr }, ref) {
   const disponibles = new Set(raices.map((c) => c.id));
   return (
     <section aria-labelledby="isma-home-titulo">
       <header className="mb-5 text-center">
-        <h1 id="isma-home-titulo" className="text-[28px] font-black uppercase leading-none tracking-[.04em] text-zinc-900 sm:text-[34px]">
+        <h1 id="isma-home-titulo" className="text-[28px] font-black uppercase leading-none tracking-[.04em] text-zinc-900 sm:text-[38px] lg:text-[44px]">
           Isma <span className="text-brand-600">Gastro</span>-Bar
         </h1>
         <p className="mt-2 flex items-center justify-center gap-2 text-[11.5px] font-semibold uppercase tracking-[.28em] text-zinc-500 sm:text-[12.5px]">
@@ -176,7 +176,7 @@ const Home = forwardRef(function Home({ raices = [], listo = true, onIr }, ref) 
         <div className="mx-auto mt-3 h-[3px] w-14 rounded-full" style={{ background: `linear-gradient(90deg, #C8102E, ${ORO})` }} />
       </header>
 
-      <div ref={ref} className="grid grid-cols-3 gap-2.5 sm:gap-3.5">
+      <div ref={ref} className="mx-auto grid max-w-[880px] grid-cols-3 gap-2.5 sm:gap-4 lg:gap-5">
         {TABLERO.map((t) => <Tarjeta key={t.clave} t={t} catId={destino(t, disponibles)} listo={listo} onIr={onIr} />)}
         <Tarjeta t={ADICIONALES} catId={destino(ADICIONALES, disponibles)} listo={listo} onIr={onIr} ancho />
       </div>

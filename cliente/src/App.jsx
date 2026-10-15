@@ -3,7 +3,8 @@ import { crearLinea, resumenLinea } from '@shared/comandas.js';
 import PizzaWizard, { esTamanoPizza } from './components/PizzaWizard';
 import CarritoContenido from './components/Carrito';
 import Home from './components/Home';
-import { BarraCategorias, NavLateral, SheetCategorias, Seccion, FilaProducto, IconSearch } from './components/Menu';
+import VistaCategoria from './components/VistaCategoria';
+import { SheetCategorias, FilaProducto, IconSearch } from './components/Menu';
 import ProductoSheet from './components/ProductoSheet';
 import CompletarDatosCliente from './components/CompletarDatosCliente';
 import { NEGOCIO } from './config/negocio';
@@ -50,7 +51,8 @@ export default function App() {
   const [activa, setActiva] = useState(null);
   const [busqueda, setBusqueda] = useState('');
   const [verCategorias, setVerCategorias] = useState(false);
-  const [verBarra, setVerBarra] = useState(false);
+  // Categoría abierta (lista de productos). null = Home (cuadrícula de categorías).
+  const [catAbierta, setCatAbierta] = useState(null);
   const [verArriba, setVerArriba] = useState(false);
   // Botón "volver al inicio": aparece después de bajar un poco por el menú.
   useEffect(() => {
@@ -59,8 +61,6 @@ export default function App() {
     window.addEventListener('scroll', revisar, { passive: true });
     return () => window.removeEventListener('scroll', revisar);
   }, []);
-  const refGrid = useRef(null);
-  const refFila = useRef(null);
   const [wizard, setWizard] = useState({ abierto: false, tamano: null });
   const [producto, setProducto] = useState(null);
   const [carrito, setCarrito] = useState([]);
@@ -101,35 +101,26 @@ export default function App() {
     return { tamanos, grupos: grupos.filter((g) => g.items.length) };
   };
 
-  // Categoría visible mientras se baja por el menú (resalta la barra y la lista lateral).
+  // Botón/gesto "atrás" del celular: vuelve de la lista de productos a la Home (no cierra la app).
   useEffect(() => {
-    if (!menu || vista !== 'menu') return;
-    const secciones = [...document.querySelectorAll('[data-seccion]')];
-    const obs = new IntersectionObserver(
-      (entradas) => {
-        const visibles = entradas.filter((e) => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
-        if (visibles[0]) setActiva(visibles[0].target.dataset.seccion);
-      },
-      { rootMargin: '-130px 0px -55% 0px' }
-    );
-    secciones.forEach((el) => obs.observe(el));
-    const obsGrid = new IntersectionObserver(([e]) => setVerBarra(!e.isIntersecting && e.boundingClientRect.top < 0));
-    if (refGrid.current) obsGrid.observe(refGrid.current);
-    return () => { obs.disconnect(); obsGrid.disconnect(); };
-  }, [menu, vista, busqueda === '']);
+    const alVolver = (e) => { setCatAbierta(e.state?.isma_cat || null); window.scrollTo(0, 0); };
+    window.addEventListener('popstate', alVolver);
+    return () => window.removeEventListener('popstate', alVolver);
+  }, []);
 
-  // La categoría activa siempre queda a la vista en la barra.
-  useEffect(() => {
-    const fila = refFila.current;
-    const chip = fila?.querySelector(`[data-cat="${activa}"]`);
-    if (chip) fila.scrollTo({ left: chip.offsetLeft - 8, behavior: 'smooth' });
-  }, [activa]);
-
+  // Abrir una categoría (desde la Home): pantalla propia con "Volver al inicio".
   const irA = (id) => {
     setVerCategorias(false);
     setBusqueda('');
     setActiva(id);
-    requestAnimationFrame(() => document.getElementById(`cat-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+    setCatAbierta(id);
+    if (window.history.state?.isma_cat) window.history.replaceState({ isma_cat: id }, '');
+    else window.history.pushState({ isma_cat: id }, '');
+    window.scrollTo(0, 0);
+  };
+  const volverInicio = () => {
+    if (window.history.state?.isma_cat) window.history.back(); // el popstate cierra la categoría
+    else { setCatAbierta(null); window.scrollTo(0, 0); }
   };
   const irADatos = () => { setVerCarrito(false); setCheckoutAbierto(true); setVista('datos'); window.scrollTo(0, 0); };
   const subtotal = carrito.reduce((s, l) => s + l.total, 0);
@@ -269,59 +260,47 @@ export default function App() {
     <div className="min-h-screen bg-zinc-50 pb-28 lg:pb-12">
       <TopBar abierta={tienda.abierta} />
 
-      {/* Barra fija de categorías (celular/tablet): aparece al bajar del cuadro de categorías */}
-      <div className={`sticky top-[61px] z-10 border-b border-zinc-200 bg-white/95 backdrop-blur transition-all lg:hidden ${verBarra && !q ? 'translate-y-0 opacity-100' : 'pointer-events-none -translate-y-2 opacity-0'}`} style={{ marginBottom: -49 }}>
-        <div className="mx-auto max-w-2xl">
-          <BarraCategorias raices={raices} activa={activa} onIr={irA} onVerTodas={() => setVerCategorias(true)} refFila={refFila} />
-        </div>
-      </div>
-
-      <div className="mx-auto max-w-2xl px-4 pt-4 lg:grid lg:max-w-6xl lg:grid-cols-[210px_minmax(0,1fr)_340px] lg:gap-8 lg:pt-6">
-        <aside className="hidden lg:block">
-          <div className="sticky top-[85px]"><NavLateral raices={raices} activa={activa} conteo={conteo} onIr={irA} /></div>
-        </aside>
-
+      <div className="mx-auto max-w-3xl px-4 pt-4 lg:grid lg:max-w-6xl lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-8 lg:pt-6">
         <main className="min-w-0 space-y-7">
           <BannerPedidoActivo onVer={abrirSeguimiento} />
           {!tienda.abierta && <AvisoCerrado aviso={tienda.aviso} />}
-          <Home ref={refGrid} raices={raices} listo={!!menu} onIr={irA} />
-          <Pista id="menu" paso={1}>
-            <b>¿Primera vez?</b> Toca <b>Agregar</b> en lo que quieras. Las pizzas se arman eligiendo el tamaño y los sabores.
-            Cuando termines, toca <b>Ver mi pedido</b>.
-          </Pista>
-
-          <label className="relative block">
-            <IconSearch className="pointer-events-none absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-400" />
-            <input value={busqueda} onChange={(e) => setBusqueda(e.target.value)} placeholder="Buscar: hawaiana, salchipapa, jugo…" className="field h-12 rounded-2xl pl-11 pr-10 text-[15px]" />
-            {busqueda && (
-              <button onClick={() => setBusqueda('')} aria-label="Borrar búsqueda" className="absolute right-2 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full text-zinc-400 hover:bg-zinc-100"><IconX className="h-4 w-4" /></button>
-            )}
-          </label>
-
-          {q ? (
-            <section>
-              <h2 className="mb-3 text-[15px] font-semibold text-zinc-600">{resultados.length ? `${resultados.length} resultado${resultados.length > 1 ? 's' : ''}` : 'No encontramos nada con esa palabra'}</h2>
-              {resultados.length > 0 && (
-                <div className="card divide-y divide-zinc-100 overflow-hidden">
-                  {resultados.map((i) => (
-                    <FilaProducto key={i.id} item={i} nombre={nombreCliente(i)} etiqueta={raices.find((c) => c.id === i.categoria_id)?.nombre} onClick={() => abrir(i)} />
-                  ))}
-                </div>
-              )}
-            </section>
+          {catAbierta ? (
+            <VistaCategoria
+              cat={raices.find((c) => c.id === catAbierta)}
+              bloques={bloquesDe(catAbierta)}
+              nombreDe={nombreCliente}
+              onProducto={tocar}
+              onArmarPizza={(tamano) => setWizard({ abierto: true, tamano })}
+              onVolver={volverInicio}
+            />
           ) : (
             <>
-              {raices.map((c) => (
-                <Seccion
-                  key={c.id}
-                  cat={c}
-                  bloques={bloquesDe(c.id)}
-                  esPizza={c.id === 'pizzas'}
-                  nombreDe={nombreCliente}
-                  onProducto={tocar}
-                  onArmarPizza={(tamano) => setWizard({ abierto: true, tamano })}
-                />
-              ))}
+              <Home raices={raices} listo={!!menu} onIr={irA} />
+              <Pista id="menu" paso={1}>
+                <b>¿Primera vez?</b> Toca una categoría y luego <b>Agregar</b> en lo que quieras.
+                Cuando termines, toca <b>Ver mi pedido</b>.
+              </Pista>
+
+              <label className="relative block">
+                <IconSearch className="pointer-events-none absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-400" />
+                <input value={busqueda} onChange={(e) => setBusqueda(e.target.value)} placeholder="Buscar: patacón, churrasco, jugo…" className="field h-12 rounded-2xl pl-11 pr-10 text-[15px]" />
+                {busqueda && (
+                  <button onClick={() => setBusqueda('')} aria-label="Borrar búsqueda" className="absolute right-2 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full text-zinc-400 hover:bg-zinc-100"><IconX className="h-4 w-4" /></button>
+                )}
+              </label>
+
+              {q && (
+                <section>
+                  <h2 className="mb-3 text-[15px] font-semibold text-zinc-600">{resultados.length ? `${resultados.length} resultado${resultados.length > 1 ? 's' : ''}` : 'No encontramos nada con esa palabra'}</h2>
+                  {resultados.length > 0 && (
+                    <div className="card divide-y divide-zinc-100 overflow-hidden">
+                      {resultados.map((i) => (
+                        <FilaProducto key={i.id} item={i} nombre={nombreCliente(i)} etiqueta={raices.find((c) => c.id === i.categoria_id)?.nombre} onClick={() => abrir(i)} />
+                      ))}
+                    </div>
+                  )}
+                </section>
+              )}
             </>
           )}
           <footer className="mt-10 border-t border-zinc-200 pb-6 pt-4 text-center text-[12.5px] text-zinc-400">
