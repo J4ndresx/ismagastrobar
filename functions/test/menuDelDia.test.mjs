@@ -22,7 +22,7 @@ const mdd = (extra = {}) => armarMenuDelDia({ sopaDelDia: ['Sancocho de gallina'
 
 await prueba('seed: estructura coherente (categorías, grupos, precios, modificadores del cliente)', () => {
   const cats = new Set(CATEGORIAS.map((c) => c.id));
-  assert.deepEqual(CATEGORIAS.filter((c) => !c.parent_id).map((c) => c.id), ['menu_del_dia', 'tradicional', 'proteinas', 'a_la_carta', 'picadas', 'bebidas', 'adicionales', 'parrilla_especiales']);
+  assert.deepEqual(CATEGORIAS.filter((c) => !c.parent_id).map((c) => c.id), ['desayunos', 'menu_del_dia', 'tradicional', 'proteinas', 'a_la_carta', 'picadas', 'bebidas', 'adicionales', 'parrilla_especiales']);
   // Subcategorías: cuelgan de una categoría raíz, y en Bebidas/Adicionales todo producto tiene la suya.
   for (const c of CATEGORIAS.filter((x) => x.parent_id)) assert.ok(cats.has(c.parent_id) && !CATEGORIAS.find((x) => x.id === c.parent_id).parent_id, c.id);
   for (const i of MENU_ITEMS.filter((x) => ['bebidas', 'adicionales'].includes(x.categoria_id))) {
@@ -43,6 +43,10 @@ await prueba('seed: estructura coherente (categorías, grupos, precios, modifica
   // Las bebidas originales se conservan (mismos ids) dentro de "Jugos y Bebidas del Día".
   for (const id of ['claro', 'guandolo', 'mazamorra', 'jugo_del_dia']) assert.equal(I[id]?.subcategoria_id, 'bebidas_del_dia', id);
   assert.equal(I.ensalada?.subcategoria_id, 'adic_acompanamientos');
+  // Desayunos: Desayuno Especial exige proteína, bebida y huevos (una opción de cada uno).
+  assert.deepEqual(I.desayuno_especial.grupos_opciones.map((r) => [r.grupo_id, r.min, r.max]), [['proteina_desayuno', 1, 1], ['bebida_caliente', 1, 1], ['huevos_al_gusto', 1, 1]]);
+  assert.deepEqual(G.proteina_desayuno.opciones.map((o) => o.nombre), ['Jamón', 'Salchicha', 'Tocineta', 'Carne molida', 'Chorizo']);
+  assert.deepEqual(['desayuno_sencillo', 'desayuno_especial', 'calentado_sencillo', 'calentado_completo', 'sandwich_atun'].map((id) => PRECIOS[id]), [12000, 14000, 14000, 16000, 19000]);
 });
 
 await prueba('fecha de Bogotá: a las 11 p. m. todavía es "hoy", a las 12:01 a. m. ya es el día siguiente', () => {
@@ -148,6 +152,20 @@ await prueba('frecuentes: lo publicado va primero, sin repetidos (tildes/mayúsc
   assert.deepEqual(chips.slice(0, 3), ['ajiaco', 'Mondongo', 'Sancocho']);
   assert.equal(chips.filter((c) => c.toLowerCase() === 'sancocho').length, 1);
   assert.deepEqual(separarOpciones('Frijoles, Lentejas;  ,Sopa de pasta'), ['Frijoles', 'Lentejas', 'Sopa de pasta']);
+});
+
+await prueba('desayunos: Desayuno Especial exige proteína/bebida/huevos; una opción apagada se rechaza en la nube', async () => {
+  assert.equal(validarSeleccion(I.desayuno_especial, { opciones: {} }).length, 3);
+  const sel = { cantidad: 1, opciones: { proteina_desayuno: ['chorizo'], bebida_caliente: ['cafe'], huevos_al_gusto: ['pericos'] } };
+  assert.equal(validarSeleccion(I.desayuno_especial, sel).length, 0);
+  const l = crearLinea(I.desayuno_especial, G, sel);
+  assert.equal(l.total, I.desayuno_especial.precio);
+  const ok = await verificarPedidoApp(pedido([l]), { menu: { items: I, grupos: G } });
+  assert.equal(ok.verificacion.ok, true, ok.verificacion.avisos.join());
+  // El admin apagó "Chorizo" (Agotados → Opciones): un pedido que lo traiga se marca para revisar.
+  const sinChorizo = { ...G, proteina_desayuno: { ...G.proteina_desayuno, opciones: G.proteina_desayuno.opciones.map((o) => (o.id === 'chorizo' ? { ...o, activo: false } : o)) } };
+  const malo = await verificarPedidoApp(pedido([l]), { menu: { items: I, grupos: sinChorizo } });
+  assert.equal(malo.verificacion.ok, false);
 });
 
 console.log(`\n${n} pruebas de ISMA OK`);

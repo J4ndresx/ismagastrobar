@@ -1,5 +1,6 @@
 // Panel del administrador: marcar platos como "Agotados". Desaparecen al instante
 // de la app del cliente (y del POS) hasta que se vuelvan a activar.
+// Abajo, "Opciones de los platos": prender/apagar una opción suelta (p. ej. "no hay chorizo").
 import { useEffect, useMemo, useState } from 'react';
 import { MDD_ITEM_ID } from '@shared/menuDelDia.js';
 import * as api from '../data/api';
@@ -13,6 +14,7 @@ export default function Agotados() {
   const [error, setError] = useState('');
   const [pendientes, setPendientes] = useState(() => new Set());
   const [confirmar, setConfirmar] = useState(false);
+  const [opcPendiente, setOpcPendiente] = useState(null);
   useEffect(() => api.escucharCatalogo(setCat), []);
   useEffect(() => { if (!confirmar) return; const t = setTimeout(() => setConfirmar(false), 5000); return () => clearTimeout(t); }, [confirmar]);
 
@@ -27,6 +29,30 @@ export default function Agotados() {
       .map((c) => ({ c, lista: items.filter((i) => i.categoria_id === c.id && (!q || normalizar(i.nombre).includes(q))).sort((a, b) => a.orden - b.orden) }))
       .filter((s) => s.lista.length);
   }, [cat, items, busqueda]);
+
+  // Grupos de opciones que usan los platos (los del Menú del Día se manejan en su panel).
+  const gruposUsados = useMemo(() => {
+    const usos = {};
+    for (const i of items) for (const r of i.grupos_opciones || []) {
+      if (r.grupo_id.startsWith('mdd_') || !cat?.grupos?.[r.grupo_id]) continue;
+      (usos[r.grupo_id] ||= []).push(i.nombre);
+    }
+    return Object.entries(usos).map(([id, platos]) => ({ g: cat.grupos[id], platos }));
+  }, [cat, items]);
+  const apagadas = gruposUsados.reduce((n, { g }) => n + g.opciones.filter((o) => o.activo === false).length, 0);
+
+  const cambiarOpcion = async (g, o) => {
+    setError('');
+    setOpcPendiente(`${g.id}/${o.id}`);
+    try {
+      await api.cambiarOpcion(g.id, o.id, o.activo === false);
+    } catch (e) {
+      console.error(e);
+      setError(e?.code === 'permission-denied' ? 'Solo el administrador puede cambiar opciones.' : e?.message || 'No se pudo cambiar. Revisa la conexión.');
+    } finally {
+      setOpcPendiente(null);
+    }
+  };
 
   const marcar = async (item) => {
     setError('');
@@ -101,6 +127,47 @@ export default function Agotados() {
         </section>
       ))}
       {!secciones.length && <p className="py-8 text-center text-[14px] text-zinc-500">No hay productos con ese nombre.</p>}
+
+      {!busqueda.trim() && gruposUsados.length > 0 && (
+        <section className="pt-4">
+          <div className="mb-2 px-1">
+            <h3 className="text-[12px] font-semibold uppercase tracking-[0.12em] text-slate-400">Opciones de los platos</h3>
+            <p className="text-[13px] text-zinc-500">
+              Toca una opción para apagarla si se acabó (p. ej. chorizo). {apagadas ? <b className="text-red-600">{apagadas} apagada{apagadas > 1 ? 's' : ''}.</b> : 'Todas disponibles.'}
+            </p>
+          </div>
+          <div className="divide-y divide-zinc-100 overflow-hidden rounded-2xl border border-zinc-200 bg-white">
+            {gruposUsados.map(({ g, platos }) => {
+              const activas = g.opciones.filter((o) => o.activo !== false).length;
+              return (
+                <div key={g.id} className="px-4 py-3">
+                  <p className="text-[14px] font-semibold">{g.nombre}</p>
+                  <p className="mb-2 truncate text-[12px] text-zinc-400">{platos.join(' · ')}</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {g.opciones.map((o) => {
+                      const on = o.activo !== false;
+                      const ultima = on && activas === 1;
+                      return (
+                        <button
+                          key={o.id}
+                          type="button"
+                          aria-pressed={on}
+                          disabled={opcPendiente === `${g.id}/${o.id}` || ultima}
+                          title={ultima ? 'Es la única disponible: no se puede apagar' : on ? 'Toca para apagar' : 'Toca para volver a prender'}
+                          onClick={() => cambiarOpcion(g, o)}
+                          className={`rounded-full border px-3 py-1.5 text-[13px] font-semibold transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 ${on ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-red-200 bg-red-50 text-red-600 line-through'}`}
+                        >
+                          {o.nombre}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

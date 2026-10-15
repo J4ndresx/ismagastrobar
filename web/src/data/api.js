@@ -128,9 +128,10 @@ export async function guardarMenuDelDia(datos, frecuentes = {}) {
 
 /** Catálogo completo (incluye agotados) para el panel de Agotados. */
 export function escucharCatalogo(cb) {
-  const e = { categorias: null, items: null };
-  const emitir = () => e.categorias && e.items && cb({ categorias: e.categorias, items: e.items });
+  const e = { categorias: null, items: null, grupos: null };
+  const emitir = () => e.categorias && e.items && e.grupos && cb({ categorias: e.categorias, items: e.items, grupos: e.grupos });
   const subs = [
+    onSnapshot(collection(db, `${base}/grupos_opciones`), (s) => { e.grupos = Object.fromEntries(s.docs.map((d) => [d.id, d.data()])); emitir(); }),
     onSnapshot(collection(db, `${base}/categorias`), (s) => { e.categorias = s.docs.map((d) => d.data()).filter((c) => c.activo); emitir(); }),
     onSnapshot(collection(db, `${base}/menu_items`), (s) => { e.items = s.docs.map((d) => d.data()).filter((i) => i.activo !== false); emitir(); }),
   ];
@@ -140,6 +141,19 @@ export function escucharCatalogo(cb) {
 /** Marca / desmarca un producto como agotado: desaparece de la app del cliente y del POS al instante. */
 export async function marcarAgotado(itemId, agotado) {
   await updateDoc(doc(db, `${base}/menu_items/${itemId}`), { agotado: agotado === true, agotado_en: agotado ? serverTimestamp() : null });
+}
+
+/** Prende / apaga UNA opción de un grupo (p. ej. "Chorizo" en Proteína de desayuno).
+ *  Apagada, deja de salir en la app del cliente y en el POS, y la nube rechaza pedidos que la traigan. */
+export async function cambiarOpcion(grupoId, opcionId, activo) {
+  const ref = doc(db, `${base}/grupos_opciones/${grupoId}`);
+  await runTransaction(db, async (tx) => {
+    const s = await tx.get(ref);
+    if (!s.exists()) throw new Error('Ese grupo de opciones ya no existe.');
+    const opciones = (s.data().opciones || []).map((o) => (o.id === opcionId ? { ...o, activo: activo === true } : o));
+    if (!opciones.some((o) => o.activo !== false)) throw new Error('Deja al menos una opción disponible: si no, nadie podría pedir ese plato.');
+    tx.update(ref, { opciones });
+  });
 }
 
 /** Quita el "agotado" de varios productos a la vez (inicio del día). */

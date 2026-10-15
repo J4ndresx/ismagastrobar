@@ -149,7 +149,7 @@ export async function guardarMenuDelDia(datos, frecuentes = {}) {
   avisarMenu();
 }
 export function escucharCatalogo(cb) {
-  const f = () => cb({ categorias: CATEGORIAS, items: itemsDemo });
+  const f = () => cb({ categorias: CATEGORIAS, items: itemsDemo, grupos: Object.fromEntries(GRUPOS_OPCIONES.map((g) => [g.id, g])) });
   oyentesMenu.add(f);
   setTimeout(f, 100);
   return () => oyentesMenu.delete(f);
@@ -157,6 +157,13 @@ export function escucharCatalogo(cb) {
 export async function marcarAgotado(id, agotado) {
   const it = itemsDemo.find((i) => i.id === id);
   if (it) it.agotado = agotado === true;
+  avisarMenu();
+}
+export async function cambiarOpcion(grupoId, opcionId, activo) {
+  const g = GRUPOS_OPCIONES.find((x) => x.id === grupoId);
+  const nuevas = g.opciones.map((o) => (o.id === opcionId ? { ...o, activo: activo === true } : o));
+  if (!nuevas.some((o) => o.activo !== false)) throw new Error('Deja al menos una opción disponible: si no, nadie podría pedir ese plato.');
+  g.opciones = nuevas;
   avisarMenu();
 }
 export async function limpiarAgotados(ids) {

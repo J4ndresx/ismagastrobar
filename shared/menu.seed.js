@@ -15,6 +15,8 @@ export const RID = 'isma';
 
 // ─── Precios (COP) — COMPLETAR ─────────────────────────────────────────
 export const PRECIOS = {
+  // Desayunos
+  desayuno_sencillo: 12000, desayuno_especial: 14000, calentado_sencillo: 14000, calentado_completo: 16000, sandwich_atun: 19000,
   menu_dia: 0,
   bandejita_paisa: 0, cazuela: 0, bandeja_paisa: 0,
   res: 0, canon_de_cerdo: 0, pechuga: 0, chicharron: 0, higado_encebollado: 0, res_molida: 0,
@@ -47,6 +49,8 @@ export const ZONAS = {
 // ─── Categorías ────────────────────────────────────────────────────────
 // tipo_ui: 'subcategorias' | 'grilla'
 export const CATEGORIAS = [
+  // orden 0.5 = primera en el POS y en la app, sin cambiar el orden de las demás.
+  { id: 'desayunos', nombre: 'Desayunos', parent_id: null, orden: 0.5, zona_preparacion: 'cocina', tipo_ui: 'grilla' },
   { id: 'menu_del_dia', nombre: 'Menú del Día', parent_id: null, orden: 1, zona_preparacion: 'cocina', tipo_ui: 'grilla' },
   { id: 'tradicional', nombre: 'Tradicional', parent_id: null, orden: 2, zona_preparacion: 'cocina', tipo_ui: 'grilla' },
   { id: 'proteinas', nombre: 'Proteínas', parent_id: null, orden: 3, zona_preparacion: 'cocina', tipo_ui: 'grilla' },
@@ -89,6 +93,10 @@ export const GRUPOS_OPCIONES = [
   { id: 'porcion_picada', nombre: 'Porción', opciones: [op('Para 2 personas')] },
   { id: 'corte_asado', nombre: 'Corte', opciones: [op('Punta de anca'), op('Churrasco')] },
   { id: 'carne_chuzo', nombre: 'Carne', opciones: [op('Cerdo'), op('Pollo')] },
+  // Desayunos. El admin apaga una opción (p. ej. "no hay chorizo") desde Agotados → Opciones.
+  { id: 'proteina_desayuno', nombre: 'Proteína', opciones: [op('Jamón'), op('Salchicha'), op('Tocineta'), op('Carne molida'), op('Chorizo')] },
+  { id: 'bebida_caliente', nombre: 'Bebida', opciones: [op('Café'), op('Chocolate'), op('Aromática')] },
+  { id: 'huevos_al_gusto', nombre: 'Huevos', opciones: [op('Fritos'), op('Revueltos'), op('Pericos')] },
   { id: 'sabor_postobon', nombre: 'Sabor', opciones: [op('Colombiana'), op('Manzana'), op('Naranja'), op('Uva')] },
   { id: 'sabor_gatorade', nombre: 'Sabor', opciones: [op('Mandarina'), op('Tropical'), op('Uva'), op('Limón')] },
 ];
@@ -129,6 +137,25 @@ function item(catId, nombre, extra = {}) {
     ...(PRECIOS[id] === 0 ? { precio_por_confirmar: true } : {}),
   });
 }
+
+// DESAYUNOS
+// "Huevos al gusto" se pide como opción obligatoria para que la cocina sepa cómo prepararlos.
+const HUEVOS = g('huevos_al_gusto', 'Huevos', 1, 1);
+const BEBIDA_CALIENTE = g('bebida_caliente', 'Bebida', 1, 1);
+item('desayunos', 'Desayuno Sencillo', { id: 'desayuno_sencillo', nombre_comanda: 'DESAYUNO SENCILLO',
+  descripcion: 'Dos huevos al gusto, arepa tela antioqueña, quesito en tajadas y bebida caliente a elección.',
+  grupos_opciones: [BEBIDA_CALIENTE, HUEVOS] });
+item('desayunos', 'Desayuno Especial', { id: 'desayuno_especial', nombre_comanda: 'DESAYUNO ESPECIAL',
+  descripcion: 'Dos huevos al gusto, proteína a elección, arepa tela antioqueña, quesito en tajadas y bebida caliente a elección.',
+  grupos_opciones: [g('proteina_desayuno', 'Proteína', 1, 1), BEBIDA_CALIENTE, HUEVOS] });
+item('desayunos', 'Calentado Sencillo', { id: 'calentado_sencillo', nombre_comanda: 'CALENTADO SENCILLO',
+  descripcion: 'Frijoles, arroz, carne molida, dos huevos al gusto, arepa tela antioqueña, quesito en tajadas y tajada de maduro.',
+  grupos_opciones: [HUEVOS] });
+item('desayunos', 'Calentado Completo', { id: 'calentado_completo', nombre_comanda: 'CALENTADO COMPLETO',
+  descripcion: 'Frijoles, arroz, carne molida, chicharrón crocante, dos huevos al gusto, arepa tela antioqueña, quesito en tajadas y tajada de maduro.',
+  grupos_opciones: [HUEVOS] });
+item('desayunos', 'Sándwich Artesanal de Atún Premium', { id: 'sandwich_atun', nombre_comanda: 'SANDWICH ATUN',
+  descripcion: 'Pan artesanal con queso, relleno de atún premium de alta calidad, dos huevos batidos, aguacate fresco, lechuga y tomate. Acompañado de una taza de chocolate caliente.' });
 
 // MENÚ DEL DÍA — sopa, proteína, ensalada y bebida obligatorias; sus opciones las pone el dueño cada día.
 item('menu_del_dia', 'Menú del Día', {
