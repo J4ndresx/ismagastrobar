@@ -77,3 +77,6 @@ clave-servicio*.json
 *.pem
 *.key
 config.json
+# Compilados (los genera desplegar.bat; no se guardan en Git)
+cliente/dist/
+web/dist/
