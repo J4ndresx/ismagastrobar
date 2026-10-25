@@ -94,10 +94,11 @@ export const GRUPOS_OPCIONES = [
   { id: 'porcion_picada', nombre: 'Porción', opciones: [op('Para 2 personas')] },
   { id: 'corte_asado', nombre: 'Corte', opciones: [op('Punta de anca'), op('Churrasco')] },
   { id: 'carne_chuzo', nombre: 'Carne', opciones: [op('Cerdo'), op('Pollo')] },
-  // Desayunos. El admin apaga una opción (p. ej. "no hay chorizo") desde Agotados → Opciones.
-  { id: 'proteina_desayuno', nombre: 'Proteína', opciones: [op('Jamón'), op('Salchicha'), op('Tocineta'), op('Carne molida'), op('Chorizo')] },
-  { id: 'bebida_caliente', nombre: 'Bebida', opciones: [op('Café'), op('Chocolate'), op('Aromática')] },
-  { id: 'huevos_al_gusto', nombre: 'Huevos', opciones: [op('Fritos'), op('Revueltos'), op('Pericos')] },
+  // Desayunos (listas confirmadas por ISMA el 2026-10-25). El admin apaga una opción (p. ej. "no hay chorizo") desde Agotados → Opciones.
+  { id: 'proteina_desayuno', nombre: 'Proteína', opciones: [op('Res'), op('Cerdo'), op('Pechuga'), op('Chicharrón'), op('Hígado encebollado'), op('Res molida'), op('Chorizo'), op('Morcilla')] },
+  // El id sigue siendo bebida_caliente para no dejar un grupo huérfano en Firestore; incluye el jugo frío.
+  { id: 'bebida_caliente', nombre: 'Bebida', opciones: [op('Aromática'), op('Café'), op('Tinto'), op('Chocolate oscuro'), op('Chocolate en leche'), op('Jugo frío del día')] },
+  { id: 'huevos_al_gusto', nombre: 'Huevos', opciones: [op('Fritos'), op('Revueltos'), op('Revueltos con aliños'), op('Pericos')] },
   { id: 'sabor_postobon', nombre: 'Sabor', opciones: [op('Colombiana'), op('Manzana'), op('Naranja'), op('Uva')] },
   { id: 'sabor_gatorade', nombre: 'Sabor', opciones: [op('Mandarina'), op('Tropical'), op('Uva'), op('Limón')] },
 ];
@@ -144,10 +145,10 @@ function item(catId, nombre, extra = {}) {
 const HUEVOS = g('huevos_al_gusto', 'Huevos', 1, 1);
 const BEBIDA_CALIENTE = g('bebida_caliente', 'Bebida', 1, 1);
 item('desayunos', 'Desayuno Sencillo', { id: 'desayuno_sencillo', nombre_comanda: 'DESAYUNO SENCILLO',
-  descripcion: 'Dos huevos al gusto, arepa tela antioqueña, quesito en tajadas y bebida caliente a elección.',
+  descripcion: 'Dos huevos al gusto, arepa tela antioqueña, quesito en tajadas y bebida a elección.',
   grupos_opciones: [BEBIDA_CALIENTE, HUEVOS] });
 item('desayunos', 'Desayuno Especial', { id: 'desayuno_especial', nombre_comanda: 'DESAYUNO ESPECIAL',
-  descripcion: 'Dos huevos al gusto, proteína a elección, arepa tela antioqueña, quesito en tajadas y bebida caliente a elección.',
+  descripcion: 'Dos huevos al gusto, proteína a elección, arepa tela antioqueña, quesito en tajadas y bebida a elección.',
   grupos_opciones: [g('proteina_desayuno', 'Proteína', 1, 1), BEBIDA_CALIENTE, HUEVOS] });
 item('desayunos', 'Calentado Sencillo', { id: 'calentado_sencillo', nombre_comanda: 'CALENTADO SENCILLO',
   descripcion: 'Frijoles, arroz, carne molida, dos huevos al gusto, arepa tela antioqueña, quesito en tajadas y tajada de maduro.',

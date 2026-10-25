@@ -45,7 +45,7 @@ await prueba('seed: estructura coherente (categorías, grupos, precios, modifica
   assert.equal(I.ensalada?.subcategoria_id, 'adic_acompanamientos');
   // Desayunos: Desayuno Especial exige proteína, bebida y huevos (una opción de cada uno).
   assert.deepEqual(I.desayuno_especial.grupos_opciones.map((r) => [r.grupo_id, r.min, r.max]), [['proteina_desayuno', 1, 1], ['bebida_caliente', 1, 1], ['huevos_al_gusto', 1, 1]]);
-  assert.deepEqual(G.proteina_desayuno.opciones.map((o) => o.nombre), ['Jamón', 'Salchicha', 'Tocineta', 'Carne molida', 'Chorizo']);
+  assert.deepEqual(G.proteina_desayuno.opciones.map((o) => o.nombre), ['Res', 'Cerdo', 'Pechuga', 'Chicharrón', 'Hígado encebollado', 'Res molida', 'Chorizo', 'Morcilla']);
   assert.deepEqual(['desayuno_sencillo', 'desayuno_especial', 'calentado_sencillo', 'calentado_completo', 'sandwich_atun'].map((id) => PRECIOS[id]), [12000, 14000, 14000, 16000, 19000]);
 });
 
