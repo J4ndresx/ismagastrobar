@@ -6,7 +6,8 @@
 // Aquí solo existe el ítem `menu_dia` con sus cuatro grupos obligatorios.
 //
 // ⚠️ PRECIOS: los de Desayunos, Menú del Día, Tradicional y A la Carta son
-// reales (ISMA, 2026-10-25). Proteínas y Picadas siguen en 0: scripts/cargar-menu.mjs
+// reales (ISMA, 2026-10-25), igual que Bebidas. Adicionales tienen precios de EJEMPLO.
+// Proteínas y Picadas siguen en 0: scripts/cargar-menu.mjs
 // y cargar-categoria.mjs se niegan a cargar mientras haya precios en 0.
 
 import { MDD_ITEM_ID, slugOpcion as slug } from './menuDelDia.js';
@@ -27,15 +28,27 @@ export const PRECIOS = {
   churrasco: 42000, punta_de_anca: 42000, tilapia: 34000, filete_tilapia: 23000, robalo: 21000, trucha: 28000,
   // ⚠️ Picadas: sigue en 0 (pendiente con ISMA, ver duplicado con Parrilla)
   picada_paisa: 0,
-  // ⚠️ Bebidas y Adicionales: PRECIOS DE EJEMPLO (puestos para poder cargar). Reemplazar por los reales de ISMA.
-  // Bebidas (por subcategoría)
-  jugo_del_dia: 6000, limonada_natural: 6000, limonada_de_coco: 9000, claro: 4000, guandolo: 4000, mazamorra: 5000,
-  cerveza_aguila: 5000, cerveza_poker: 5000, cerveza_pilsen: 5000, cerveza_club_colombia: 6000, cerveza_corona: 9000,
-  aguardiente_trago: 6000, aguardiente_media: 45000, aguardiente_botella: 85000, ron_trago: 7000, ron_media: 50000, ron_botella: 95000,
-  coca_cola_personal: 4500, postobon_personal: 4000, gaseosa_litro: 8000, agua: 3500, agua_con_gas: 4000,
-  refajo_vaso: 6000, refajo_jarra: 22000, red_bull: 9000, vive_100: 4500,
-  gatorade: 6000, electrolit: 9000,
-  michelada: 9000, mojito: 18000, margarita: 18000, pina_colada: 18000, cuba_libre: 15000,
+  // Bebidas (lista y precios reales ISMA, 2026-10-25)
+  // Cervezas
+  cerveza_heineken_269: 5000, cerveza_heineken_zero_269: 5000, cerveza_heineken_473: 6000, cerveza_heineken_330: 5000,
+  cerveza_andina_473: 6000, cerveza_mistica_330: 6000, cerveza_pilsen: 5000, cerveza_aguila_light: 5000, cerveza_aguila_negra: 5000,
+  cerveza_poker: 5000, cerveza_costenita: 5000, cerveza_corona: 7000, cerveza_corona_zero: 6000, cerveza_club_colombia: 6000,
+  cerveza_3_cordilleras: 9000,
+  // Energizantes
+  speed_473: 5000, speed_310: 3000, speed_250: 2500, red_bull: 11000,
+  // Hidratantes
+  gatorade: 5000, gatorlit: 7000,
+  // Mezcladores
+  bretana_1500: 6000, bretana_310: 4000, bretana_mango_lulo: 5000, mezclador_quatro_400: 4000,
+  mezclador_coca_cola_400: 4000, coca_cola_1500: 7000, quatro_1500: 7000,
+  // Aguas
+  agua_cristal_250: 1500, agua_cristal_600: 3000, agua_cristal_aloe: 3500, agua_cristal_gas_1l: 5000,
+  agua_h2o_600: 5000, agua_h2o_250: 2500, agua_acqua_600: 5000,
+  // Gaseosas
+  gaseosa_personal: 4000, gaseosa_1500: 6000,
+  // Jugos Hit
+  hit_cajita: 2000, hit_botella: 5000,
+  // ⚠️ Adicionales: PRECIOS DE EJEMPLO (puestos para poder cargar). Reemplazar por los reales de ISMA.
   // Adicionales (por subcategoría)
   adic_res: 9000, adic_cerdo: 8000, adic_pollo: 8000, adic_chicharron: 8000, adic_chorizo: 5000,
   adic_queso: 4000, adic_tocineta: 4000, adic_huevo: 2500,
@@ -70,16 +83,14 @@ export const CATEGORIAS = [
 
   // ── Subcategorías (parent_id = categoría madre). La app del cliente las muestra como
   //    pestañas dentro de la categoría; el POS ya las mostraba como pestañas.
-  //    `dinamica: true` = su contenido cambia cada día (el admin prende/apaga los productos
-  //    desde "Agotados" y el cliente lo ve al instante; si no hay ninguno, la pestaña no sale).
   ...[
-    ['bebidas_del_dia', 'Jugos y Bebidas del Día', { dinamica: true }],
     ['cervezas', 'Cervezas'],
-    ['licores', 'Licores y Tragos'],
-    ['gaseosas', 'Gaseosas y Agua'],
-    ['refajos', 'Refajos y Energizantes'],
+    ['energizantes', 'Energizantes'],
     ['hidratantes', 'Hidratantes'],
-    ['cocteles', 'Cócteles'],
+    ['mezcladores', 'Mezcladores'],
+    ['aguas', 'Aguas'],
+    ['gaseosas', 'Gaseosas'],
+    ['jugos_hit', 'Jugos Hit'],
   ].map(([id, nombre, extra], k) => ({ id, nombre, parent_id: 'bebidas', orden: k + 1, zona_preparacion: 'general', tipo_ui: 'grilla', ...extra })),
   ...[
     ['adic_carnes', 'Porciones de carne'],
@@ -105,8 +116,14 @@ export const GRUPOS_OPCIONES = [
   // El id sigue siendo bebida_caliente para no dejar un grupo huérfano en Firestore; incluye el jugo frío.
   { id: 'bebida_caliente', nombre: 'Bebida', opciones: [op('Aromática'), op('Café'), op('Tinto'), op('Chocolate oscuro'), op('Chocolate en leche'), op('Jugo frío del día')] },
   { id: 'huevos_al_gusto', nombre: 'Huevos', opciones: [op('Fritos'), op('Revueltos'), op('Revueltos con aliños'), op('Pericos')] },
-  { id: 'sabor_postobon', nombre: 'Sabor', opciones: [op('Colombiana'), op('Manzana'), op('Naranja'), op('Uva')] },
-  { id: 'sabor_gatorade', nombre: 'Sabor', opciones: [op('Mandarina'), op('Tropical'), op('Uva'), op('Limón')] },
+  // Bebidas: sabores/estilos (el admin apaga el que se acabe desde Agotados → Opciones).
+  { id: 'estilo_3_cordilleras', nombre: 'Estilo', opciones: [op('Mulata'), op('Rosé'), op('Blanca'), op('Mestiza')] },
+  { id: 'sabor_gatorade', nombre: 'Sabor', opciones: [op('Tropical'), op('Mandarina'), op('Gold'), op('Blue'), op('Maracuyá')] },
+  { id: 'sabor_gatorlit', nombre: 'Sabor', opciones: [op('Uva'), op('Frambuesa')] },
+  { id: 'sabor_gaseosa_personal', nombre: 'Sabor', opciones: [op('Naranja'), op('Manzana'), op('Uva'), op('Colombiana'), op('Tamarindo'), op('Pepsi'), op('Piña'), op('Coca-Cola Zero'), op('Coca-Cola Original'), op('Quatro'), op('Premium')] },
+  { id: 'sabor_gaseosa_litro', nombre: 'Sabor', opciones: [op('Manzana'), op('Uva'), op('Colombiana')] },
+  { id: 'sabor_hit_cajita', nombre: 'Sabor', opciones: [op('Lulo'), op('Naranja-Piña'), op('Mango'), op('Mora'), op('Tropical')] },
+  { id: 'sabor_hit_botella', nombre: 'Sabor', opciones: [op('Lulo'), op('Mango'), op('Tropical')] },
 ];
 
 // ─── Ítems ─────────────────────────────────────────────────────────────
@@ -199,48 +216,61 @@ item('a_la_carta', 'Trucha Mariposa', { id: 'trucha', nombre_comanda: 'TRUCHA MA
 // PICADAS
 item('picadas', 'Picada Paisa', { descripcion: 'Para 2 personas', grupos_opciones: [g('porcion_picada', 'Porción', 1, 1)] });
 
-// BEBIDAS — ⚠️ Lista de EJEMPLO para la demo: confirmar con ISMA marcas, presentaciones y precios.
+// BEBIDAS — lista real de ISMA (2026-10-25). Sabores y estilos van como opción obligatoria.
 const beb = (sub, lista) => lista.forEach(([nombre, id, extra = {}]) => item('bebidas', nombre, { id, sub, ...extra }));
-beb('bebidas_del_dia', [
-  ['Jugo del día', 'jugo_del_dia', { descripcion: 'Pregunta el sabor de hoy' }],
-  ['Limonada natural', 'limonada_natural'],
-  ['Limonada de coco', 'limonada_de_coco'],
-  ['Claro', 'claro'],
-  ['Guandolo', 'guandolo'],
-  ['Mazamorra', 'mazamorra'],
-]);
+const sabor = (grupo_id, etiqueta = 'Sabor') => ({ grupos_opciones: [g(grupo_id, etiqueta, 1, 1)] });
 beb('cervezas', [
-  ['Águila', 'cerveza_aguila'], ['Poker', 'cerveza_poker'], ['Pilsen', 'cerveza_pilsen'],
-  ['Club Colombia', 'cerveza_club_colombia'], ['Corona', 'cerveza_corona'],
+  ['Heineken Lata 269 ml', 'cerveza_heineken_269'],
+  ['Heineken Zero 269 ml', 'cerveza_heineken_zero_269'],
+  ['Heineken Lata 473 ml', 'cerveza_heineken_473'],
+  ['Heineken 330 ml', 'cerveza_heineken_330'],
+  ['Andina 473 ml', 'cerveza_andina_473'],
+  ['Mística 330 ml', 'cerveza_mistica_330'],
+  ['Pilsen 330 ml', 'cerveza_pilsen'],
+  ['Águila Light 330 ml', 'cerveza_aguila_light'],
+  ['Águila Negra 330 ml', 'cerveza_aguila_negra'],
+  ['Poker 330 ml', 'cerveza_poker'],
+  ['Costeñita', 'cerveza_costenita'],
+  ['Corona', 'cerveza_corona'],
+  ['Corona Zero', 'cerveza_corona_zero'],
+  ['Club Colombia Dorada', 'cerveza_club_colombia'],
+  ['3 Cordilleras', 'cerveza_3_cordilleras', { descripcion: 'Mulata, Rosé, Blanca o Mestiza', ...sabor('estilo_3_cordilleras', 'Estilo') }],
 ]);
-beb('licores', [
-  ['Aguardiente Antioqueño · Trago', 'aguardiente_trago', { nombre_comanda: 'AGUARDIENTE TRAGO' }],
-  ['Aguardiente Antioqueño · Media', 'aguardiente_media', { nombre_comanda: 'AGUARDIENTE MEDIA' }],
-  ['Aguardiente Antioqueño · Botella', 'aguardiente_botella', { nombre_comanda: 'AGUARDIENTE BOTELLA' }],
-  ['Ron Medellín · Trago', 'ron_trago', { nombre_comanda: 'RON TRAGO' }],
-  ['Ron Medellín · Media', 'ron_media', { nombre_comanda: 'RON MEDIA' }],
-  ['Ron Medellín · Botella', 'ron_botella', { nombre_comanda: 'RON BOTELLA' }],
-]);
-beb('gaseosas', [
-  ['Coca-Cola personal', 'coca_cola_personal'],
-  ['Postobón personal', 'postobon_personal', { grupos_opciones: [g('sabor_postobon', 'Sabor', 1, 1)] }],
-  ['Gaseosa 1.5 L', 'gaseosa_litro', { descripcion: 'Para compartir' }],
-  ['Agua', 'agua'],
-  ['Agua con gas', 'agua_con_gas'],
-]);
-beb('refajos', [
-  ['Refajo · Vaso', 'refajo_vaso', { nombre_comanda: 'REFAJO VASO' }],
-  ['Refajo · Jarra', 'refajo_jarra', { nombre_comanda: 'REFAJO JARRA', descripcion: 'Para compartir' }],
-  ['Red Bull', 'red_bull'],
-  ['Vive 100', 'vive_100'],
+beb('energizantes', [
+  ['Speed 473 ml', 'speed_473'],
+  ['Speed 310 ml', 'speed_310'],
+  ['Speed 250 ml', 'speed_250'],
+  ['Red Bull 269 ml', 'red_bull'],
 ]);
 beb('hidratantes', [
-  ['Gatorade', 'gatorade', { grupos_opciones: [g('sabor_gatorade', 'Sabor', 1, 1)] }],
-  ['Electrolit', 'electrolit'],
+  ['Gatorade', 'gatorade', sabor('sabor_gatorade')],
+  ['Gatorlit', 'gatorlit', sabor('sabor_gatorlit')],
 ]);
-beb('cocteles', [
-  ['Michelada', 'michelada'], ['Mojito', 'mojito'], ['Margarita', 'margarita'],
-  ['Piña colada', 'pina_colada'], ['Cuba libre', 'cuba_libre'],
+beb('mezcladores', [
+  ['Bretaña 1.5 L', 'bretana_1500'],
+  ['Bretaña 310 ml', 'bretana_310'],
+  ['Bretaña Mango Lulo 269 ml', 'bretana_mango_lulo'],
+  ['Quatro 400 ml', 'mezclador_quatro_400'],
+  ['Coca-Cola 400 ml', 'mezclador_coca_cola_400'],
+  ['Coca-Cola 1.5 L', 'coca_cola_1500'],
+  ['Quatro 1.5 L', 'quatro_1500'],
+]);
+beb('aguas', [
+  ['Cristal 250 ml', 'agua_cristal_250'],
+  ['Cristal 600 ml', 'agua_cristal_600'],
+  ['Cristal Aloe', 'agua_cristal_aloe'],
+  ['Cristal con gas 1 L', 'agua_cristal_gas_1l'],
+  ['H2O 600 ml', 'agua_h2o_600'],
+  ['H2O 250 ml', 'agua_h2o_250'],
+  ['Acqua 600 ml', 'agua_acqua_600'],
+]);
+beb('gaseosas', [
+  ['Gaseosa personal 350/400 ml', 'gaseosa_personal', sabor('sabor_gaseosa_personal')],
+  ['Gaseosa 1.5 L', 'gaseosa_1500', { descripcion: 'Para compartir', ...sabor('sabor_gaseosa_litro') }],
+]);
+beb('jugos_hit', [
+  ['Hit Cajita 200 ml', 'hit_cajita', sabor('sabor_hit_cajita')],
+  ['Hit Botella 500 ml', 'hit_botella', sabor('sabor_hit_botella')],
 ]);
 
 // ADICIONALES — extras que el cliente suma a su pedido. ⚠️ EJEMPLO: confirmar con ISMA.
