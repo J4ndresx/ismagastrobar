@@ -29,7 +29,9 @@ await prueba('seed: estructura coherente (categorías, grupos, precios, modifica
     const sub = CATEGORIAS.find((c) => c.id === i.subcategoria_id);
     assert.equal(sub?.parent_id, i.categoria_id, `${i.id} sin subcategoría válida`);
   }
-  assert.equal(CATEGORIAS.find((c) => c.id === 'bebidas_del_dia').dinamica, true);
+  // Bebidas: las 7 subcategorías de la lista real de ISMA (2026-10-25), todas con precio.
+  assert.deepEqual(CATEGORIAS.filter((c) => c.parent_id === 'bebidas').map((c) => c.id), ['cervezas', 'energizantes', 'hidratantes', 'mezcladores', 'aguas', 'gaseosas', 'jugos_hit']);
+  for (const i of MENU_ITEMS.filter((x) => x.categoria_id === 'bebidas')) assert.ok(i.precio > 0, `${i.id} sin precio`);
   for (const i of MENU_ITEMS) {
     assert.ok(cats.has(i.categoria_id), i.id);
     for (const r of i.grupos_opciones) assert.ok(G[r.grupo_id] || r.grupo_id.startsWith('mdd_'), `${i.id} → ${r.grupo_id}`);
@@ -43,8 +45,10 @@ await prueba('seed: estructura coherente (categorías, grupos, precios, modifica
   // Precios reales entregados por ISMA (2026-10-25): ninguno en 0 en las categorías que ya se pueden cargar.
   for (const i of MENU_ITEMS.filter((x) => ['desayunos', 'menu_del_dia', 'tradicional', 'a_la_carta', 'parrilla_especiales'].includes(x.categoria_id))) assert.ok(i.precio > 0, `${i.id} sin precio`);
   assert.deepEqual(MENU_ITEMS.filter((i) => i.categoria_id === 'proteinas').map((i) => i.nombre), ['Res', 'Cañón de cerdo', 'Pechuga', 'Chicharrón', 'Hígado encebollado', 'Res molida']);
-  // Las bebidas originales se conservan (mismos ids) dentro de "Jugos y Bebidas del Día".
-  for (const id of ['claro', 'guandolo', 'mazamorra', 'jugo_del_dia']) assert.equal(I[id]?.subcategoria_id, 'bebidas_del_dia', id);
+  assert.equal(I.red_bull?.nombre, 'Red Bull 269 ml');
+  assert.equal(PRECIOS.red_bull, 11000);
+  assert.deepEqual(G.estilo_3_cordilleras.opciones.map((o) => o.nombre), ['Mulata', 'Rosé', 'Blanca', 'Mestiza']);
+  assert.equal(G.sabor_gaseosa_personal.opciones.length, 11);
   assert.equal(I.ensalada?.subcategoria_id, 'adic_acompanamientos');
   // Desayunos: Desayuno Especial exige proteína, bebida y huevos (una opción de cada uno).
   assert.deepEqual(I.desayuno_especial.grupos_opciones.map((r) => [r.grupo_id, r.min, r.max]), [['proteina_desayuno', 1, 1], ['bebida_caliente', 1, 1], ['huevos_al_gusto', 1, 1]]);
@@ -114,7 +118,7 @@ const pedido = (items) => ({ origen: 'app', tipo_entrega: 'recoger', items, subt
 
 await prueba('nube: pedido de Menú del Día válido pasa limpio', async () => {
   const menu = aplicarMenuDelDia(base, mdd(), AHORA);
-  const { verificacion } = await verificarPedidoApp(pedido([lineaMdd(menu), crearLinea(I.claro, G, { cantidad: 1 })]), { menu });
+  const { verificacion } = await verificarPedidoApp(pedido([lineaMdd(menu), crearLinea(I.agua_cristal_600, G, { cantidad: 1 })]), { menu });
   assert.equal(verificacion.ok, true, verificacion.avisos.join());
 });
 
