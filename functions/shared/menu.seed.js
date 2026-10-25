@@ -5,9 +5,9 @@
 // panel (restaurantes/{rid}/menu_del_dia/actual, ver shared/menuDelDia.js).
 // Aquí solo existe el ítem `menu_dia` con sus cuatro grupos obligatorios.
 //
-// ⚠️ PRECIOS: el cliente no los ha entregado. Todos están en 0 en la tabla
-// PRECIOS de abajo; llénalos antes de cargar (scripts/cargar-menu.mjs se
-// niega a cargar mientras haya precios en 0).
+// ⚠️ PRECIOS: los de Desayunos, Menú del Día, Tradicional y A la Carta son
+// reales (ISMA, 2026-10-25). Proteínas y Picadas siguen en 0: scripts/cargar-menu.mjs
+// y cargar-categoria.mjs se niegan a cargar mientras haya precios en 0.
 
 import { MDD_ITEM_ID, slugOpcion as slug } from './menuDelDia.js';
 
@@ -16,11 +16,16 @@ export const RID = 'isma';
 // ─── Precios (COP) — COMPLETAR ─────────────────────────────────────────
 export const PRECIOS = {
   // Desayunos
-  desayuno_sencillo: 12000, desayuno_especial: 14000, calentado_sencillo: 14000, calentado_completo: 16000, sandwich_atun: 19000,
-  menu_dia: 0,
-  bandejita_paisa: 0, cazuela: 0, bandeja_paisa: 0,
+  desayuno_sencillo: 12000, desayuno_especial: 15000, calentado_sencillo: 16000, calentado_completo: 17000, sandwich_atun: 21000,
+  menu_dia: 19000,
+  // Tradicional (precios reales ISMA, 2026-10-25)
+  bandejita_paisa: 21000, cazuela: 24000, bandeja_paisa: 34000,
+  sancocho_trifasico: 27000, sancocho_res_cerdo: 22000, mondongo: 22000, sancocho_bagre: 25000,
+  // ⚠️ Proteínas: siguen en 0 (ISMA no las incluyó en la lista del 2026-10-25)
   res: 0, canon_de_cerdo: 0, pechuga: 0, chicharron: 0, higado_encebollado: 0, res_molida: 0,
-  churrasco: 0, punta_de_anca: 0, tilapia: 0, robalo: 0, trucha: 0,
+  // A la Carta (precios reales ISMA, 2026-10-25)
+  churrasco: 42000, punta_de_anca: 42000, tilapia: 34000, filete_tilapia: 23000, robalo: 21000, trucha: 28000,
+  // ⚠️ Picadas: sigue en 0 (pendiente con ISMA, ver duplicado con Parrilla)
   picada_paisa: 0,
   // ⚠️ Bebidas y Adicionales: PRECIOS DE EJEMPLO (puestos para poder cargar). Reemplazar por los reales de ISMA.
   // Bebidas (por subcategoría)
@@ -37,7 +42,7 @@ export const PRECIOS = {
   adic_maduro: 4000, adic_patacon: 4000, adic_yuca: 4000, adic_papas: 5000, adic_arroz: 3000, adic_arepa: 2000, ensalada: 4000, pico_de_gallo: 3000,
   adic_chimichurri: 2000, adic_tartara: 2000, adic_ajo: 2000, adic_bbq: 2000, adic_hogao: 2000,
   // Parrilla y Especiales (tarde/noche)
-  patacon_montanero_isma: 22000, salchipapa_especial: 22000, hamburguesa_artesanal: 27000,
+  patacon_montanero_isma: 24000, salchipapa_especial: 22000, hamburguesa_artesanal: 27000,
   chuzo_cerdo_pollo: 24000, canon_campestre: 24000, asado_premium: 38000, picada_paisa_especial: 40000,
 };
 
@@ -94,6 +99,7 @@ export const GRUPOS_OPCIONES = [
   { id: 'porcion_picada', nombre: 'Porción', opciones: [op('Para 2 personas')] },
   { id: 'corte_asado', nombre: 'Corte', opciones: [op('Punta de anca'), op('Churrasco')] },
   { id: 'carne_chuzo', nombre: 'Carne', opciones: [op('Cerdo'), op('Pollo')] },
+  { id: 'carne_sancocho', nombre: 'Carne', opciones: [op('Res'), op('Cerdo')] },
   // Desayunos (listas confirmadas por ISMA el 2026-10-25). El admin apaga una opción (p. ej. "no hay chorizo") desde Agotados → Opciones.
   { id: 'proteina_desayuno', nombre: 'Proteína', opciones: [op('Res'), op('Cerdo'), op('Pechuga'), op('Chicharrón'), op('Hígado encebollado'), op('Res molida'), op('Chorizo'), op('Morcilla')] },
   // El id sigue siendo bebida_caliente para no dejar un grupo huérfano en Firestore; incluye el jugo frío.
@@ -171,6 +177,11 @@ item('menu_del_dia', 'Menú del Día', {
 item('tradicional', 'Bandejita paisa');
 item('tradicional', 'Cazuela');
 item('tradicional', 'Bandeja paisa');
+item('tradicional', 'Sancocho Trifásico', { id: 'sancocho_trifasico', nombre_comanda: 'SANCOCHO TRIFASICO' });
+item('tradicional', 'Sancocho de Res o Cerdo', { id: 'sancocho_res_cerdo', nombre_comanda: 'SANCOCHO',
+  grupos_opciones: [g('carne_sancocho', 'Carne', 1, 1)] });
+item('tradicional', 'Mondongo', { id: 'mondongo', nombre_comanda: 'MONDONGO' });
+item('tradicional', 'Sancocho de Bagre', { id: 'sancocho_bagre', nombre_comanda: 'SANCOCHO BAGRE' });
 
 // PROTEÍNAS
 for (const n of ['Res', 'Cañón de cerdo', 'Pechuga', 'Chicharrón', 'Hígado encebollado', 'Res molida']) item('proteinas', n);
@@ -181,8 +192,9 @@ const CARNE_270 = [g('termino_carne', 'Término', 1, 1), g('acompanamiento', 'Ac
 item('a_la_carta', 'Churrasco 270g', { id: 'churrasco', nombre_comanda: 'CHURRASCO 270G', grupos_opciones: CARNE_270 });
 item('a_la_carta', 'Punta de Anca 270g', { id: 'punta_de_anca', nombre_comanda: 'PUNTA ANCA 270G', grupos_opciones: CARNE_270 });
 item('a_la_carta', 'Tilapia 500g', { id: 'tilapia', nombre_comanda: 'TILAPIA 500G' });
-item('a_la_carta', 'Róbalo', { id: 'robalo' });
-item('a_la_carta', 'Trucha');
+item('a_la_carta', 'Filete de Tilapia', { id: 'filete_tilapia', nombre_comanda: 'FILETE TILAPIA' });
+item('a_la_carta', 'Róbalo Dorado', { id: 'robalo', nombre_comanda: 'ROBALO DORADO' });
+item('a_la_carta', 'Trucha Mariposa', { id: 'trucha', nombre_comanda: 'TRUCHA MARIPOSA' });
 
 // PICADAS
 item('picadas', 'Picada Paisa', { descripcion: 'Para 2 personas', grupos_opciones: [g('porcion_picada', 'Porción', 1, 1)] });

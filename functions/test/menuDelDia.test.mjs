@@ -38,7 +38,10 @@ await prueba('seed: estructura coherente (categorías, grupos, precios, modifica
   assert.deepEqual(G.termino_carne.opciones.map((o) => o.nombre), ['3/4', 'Bien asado']);
   assert.deepEqual(G.acompanamiento.opciones.map((o) => o.nombre), ['Papas', 'Yuca', 'Ensalada']);
   assert.deepEqual(G.porcion_picada.opciones.map((o) => o.nombre), ['Para 2 personas']);
-  assert.deepEqual(MENU_ITEMS.filter((i) => i.categoria_id === 'tradicional').map((i) => i.nombre), ['Bandejita paisa', 'Cazuela', 'Bandeja paisa']);
+  assert.deepEqual(MENU_ITEMS.filter((i) => i.categoria_id === 'tradicional').map((i) => i.nombre), ['Bandejita paisa', 'Cazuela', 'Bandeja paisa', 'Sancocho Trifásico', 'Sancocho de Res o Cerdo', 'Mondongo', 'Sancocho de Bagre']);
+  assert.deepEqual(G.carne_sancocho.opciones.map((o) => o.nombre), ['Res', 'Cerdo']);
+  // Precios reales entregados por ISMA (2026-10-25): ninguno en 0 en las categorías que ya se pueden cargar.
+  for (const i of MENU_ITEMS.filter((x) => ['desayunos', 'menu_del_dia', 'tradicional', 'a_la_carta', 'parrilla_especiales'].includes(x.categoria_id))) assert.ok(i.precio > 0, `${i.id} sin precio`);
   assert.deepEqual(MENU_ITEMS.filter((i) => i.categoria_id === 'proteinas').map((i) => i.nombre), ['Res', 'Cañón de cerdo', 'Pechuga', 'Chicharrón', 'Hígado encebollado', 'Res molida']);
   // Las bebidas originales se conservan (mismos ids) dentro de "Jugos y Bebidas del Día".
   for (const id of ['claro', 'guandolo', 'mazamorra', 'jugo_del_dia']) assert.equal(I[id]?.subcategoria_id, 'bebidas_del_dia', id);
@@ -46,7 +49,7 @@ await prueba('seed: estructura coherente (categorías, grupos, precios, modifica
   // Desayunos: Desayuno Especial exige proteína, bebida y huevos (una opción de cada uno).
   assert.deepEqual(I.desayuno_especial.grupos_opciones.map((r) => [r.grupo_id, r.min, r.max]), [['proteina_desayuno', 1, 1], ['bebida_caliente', 1, 1], ['huevos_al_gusto', 1, 1]]);
   assert.deepEqual(G.proteina_desayuno.opciones.map((o) => o.nombre), ['Res', 'Cerdo', 'Pechuga', 'Chicharrón', 'Hígado encebollado', 'Res molida', 'Chorizo', 'Morcilla']);
-  assert.deepEqual(['desayuno_sencillo', 'desayuno_especial', 'calentado_sencillo', 'calentado_completo', 'sandwich_atun'].map((id) => PRECIOS[id]), [12000, 14000, 14000, 16000, 19000]);
+  assert.deepEqual(['desayuno_sencillo', 'desayuno_especial', 'calentado_sencillo', 'calentado_completo', 'sandwich_atun'].map((id) => PRECIOS[id]), [12000, 15000, 16000, 17000, 21000]);
 });
 
 await prueba('fecha de Bogotá: a las 11 p. m. todavía es "hoy", a las 12:01 a. m. ya es el día siguiente', () => {
