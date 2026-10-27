@@ -113,8 +113,8 @@ export const GRUPOS_OPCIONES = [
   { id: 'acompanamiento', nombre: 'Acompañamiento', opciones: [op('Papas'), op('Yuca'), op('Ensalada')] },
   // Pescados (tema 9): el cliente elige uno de los dos acompañamientos.
   { id: 'acompanamiento_pescado', nombre: 'Acompañamiento', opciones: [
-    op('Sopa del día, arroz, ensalada, tajada de maduro, arepa', { id: 'con_arroz' }),
-    op('Sopa del menú del día, patacón, ensalada', { id: 'con_patacon' }),
+    op('Arroz, ensalada, tajada de maduro, arepa', { id: 'con_arroz' }),
+    op('Patacón, ensalada', { id: 'con_patacon' }),
   ] },
   { id: 'porcion_picada', nombre: 'Porción', opciones: [op('Para 2 personas')] },
   { id: 'corte_asado', nombre: 'Corte', opciones: [op('Punta de anca'), op('Churrasco')] },

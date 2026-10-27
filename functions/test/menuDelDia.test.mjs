@@ -199,7 +199,7 @@ await prueba('pescado: sopa del Menú del Día + acompañamiento, ambos obligato
   assert.deepEqual(hoy.grupos.mdd_sopa.opciones.map((o) => o.id), ['sancocho_de_gallina', 'frijoles']);
   const l = crearLinea(hoy.items.trucha, hoy.grupos, { cantidad: 1, opciones: { mdd_sopa: ['frijoles'], acompanamiento_pescado: ['con_patacon'] } });
   assert.equal(l.total, I.trucha.precio);
-  assert.deepEqual(l.opciones.map((o) => [o.grupo_id, o.valores, o.imprimir]), [['mdd_sopa', ['Frijoles'], true], ['acompanamiento_pescado', ['Sopa del menú del día, patacón, ensalada'], true]]);
+  assert.deepEqual(l.opciones.map((o) => [o.grupo_id, o.valores, o.imprimir]), [['mdd_sopa', ['Frijoles'], true], ['acompanamiento_pescado', ['Patacón, ensalada'], true]]);
   const ok = await verificarPedidoApp(pedido([l]), { menu: hoy });
   assert.equal(ok.verificacion.ok, true, ok.verificacion.avisos.join());
   // Una sopa que no está publicada hoy no se puede pedir.
