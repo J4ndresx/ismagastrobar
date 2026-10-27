@@ -185,4 +185,18 @@ await prueba('seed: Pescado y Asados separados; A la Carta inactiva y vacía', (
   assert.deepEqual([p.tilapia, p.filete_tilapia, p.robalo, p.trucha, p.churrasco, p.punta_de_anca], [34000, 23000, 21000, 28000, 42000, 42000]);
 });
 
+await prueba('pescado: acompañamiento obligatorio (uno de dos) y verificado en la nube', async () => {
+  for (const id of ['tilapia', 'filete_tilapia', 'robalo', 'trucha']) {
+    assert.deepEqual(I[id].grupos_opciones, [{ grupo_id: 'acompanamiento_pescado', etiqueta: 'Acompañamiento', min: 1, max: 1 }]);
+    assert.equal(validarSeleccion(I[id], { opciones: {} }).length, 1, `${id} debe exigir acompañamiento`);
+    assert.ok(validarSeleccion(I[id], { opciones: { acompanamiento_pescado: ['con_arroz', 'con_patacon'] } }).length > 0, `${id} no admite los dos`);
+  }
+  assert.deepEqual(G.acompanamiento_pescado.opciones.map((o) => o.id), ['con_arroz', 'con_patacon']);
+  const l = crearLinea(I.trucha, G, { cantidad: 1, opciones: { acompanamiento_pescado: ['con_patacon'] } });
+  assert.equal(l.total, I.trucha.precio);
+  assert.deepEqual(l.opciones.map((o) => [o.grupo_id, o.valores, o.imprimir]), [['acompanamiento_pescado', ['Sopa del menú del día, patacón, ensalada'], true]]);
+  const ok = await verificarPedidoApp(pedido([l]), { menu: { items: I, grupos: G } });
+  assert.equal(ok.verificacion.ok, true, ok.verificacion.avisos.join());
+});
+
 console.log(`\n${n} pruebas de ISMA OK`);

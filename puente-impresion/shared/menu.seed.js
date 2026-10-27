@@ -111,6 +111,11 @@ const op = (nombre, extra = {}) => ({ id: slug(nombre), nombre, activo: true, pr
 export const GRUPOS_OPCIONES = [
   { id: 'termino_carne', nombre: 'Término', opciones: [op('3/4'), op('Bien asado')] },
   { id: 'acompanamiento', nombre: 'Acompañamiento', opciones: [op('Papas'), op('Yuca'), op('Ensalada')] },
+  // Pescados (tema 9): el cliente elige uno de los dos acompañamientos.
+  { id: 'acompanamiento_pescado', nombre: 'Acompañamiento', opciones: [
+    op('Sopa del día, arroz, ensalada, tajada de maduro, arepa', { id: 'con_arroz' }),
+    op('Sopa del menú del día, patacón, ensalada', { id: 'con_patacon' }),
+  ] },
   { id: 'porcion_picada', nombre: 'Porción', opciones: [op('Para 2 personas')] },
   { id: 'corte_asado', nombre: 'Corte', opciones: [op('Punta de anca'), op('Churrasco')] },
   { id: 'carne_chuzo', nombre: 'Carne', opciones: [op('Cerdo'), op('Pollo')] },
@@ -213,11 +218,13 @@ const CARNE_270 = [g('termino_carne', 'Término', 1, 1), g('acompanamiento', 'Ac
 item('asados', 'Churrasco 270g', { id: 'churrasco', nombre_comanda: 'CHURRASCO 270G', grupos_opciones: CARNE_270 });
 item('asados', 'Punta de Anca 270g', { id: 'punta_de_anca', nombre_comanda: 'PUNTA ANCA 270G', grupos_opciones: CARNE_270 });
 
-// PESCADO (mismos ids que cuando estaban en A la Carta: Firestore solo les cambia la categoría)
-item('pescado', 'Tilapia 500g', { id: 'tilapia', nombre_comanda: 'TILAPIA 500G' });
-item('pescado', 'Filete de Tilapia', { id: 'filete_tilapia', nombre_comanda: 'FILETE TILAPIA' });
-item('pescado', 'Róbalo Dorado', { id: 'robalo', nombre_comanda: 'ROBALO DORADO' });
-item('pescado', 'Trucha Mariposa', { id: 'trucha', nombre_comanda: 'TRUCHA MARIPOSA' });
+// PESCADO (mismos ids que cuando estaban en A la Carta: Firestore solo les cambia la categoría).
+// Acompañamiento obligatorio (min 1, max 1 = elegir exactamente uno).
+const ACOMP_PESCADO = [g('acompanamiento_pescado', 'Acompañamiento', 1, 1)];
+item('pescado', 'Tilapia 500g', { id: 'tilapia', nombre_comanda: 'TILAPIA 500G', grupos_opciones: ACOMP_PESCADO });
+item('pescado', 'Filete de Tilapia', { id: 'filete_tilapia', nombre_comanda: 'FILETE TILAPIA', grupos_opciones: ACOMP_PESCADO });
+item('pescado', 'Róbalo Dorado', { id: 'robalo', nombre_comanda: 'ROBALO DORADO', grupos_opciones: ACOMP_PESCADO });
+item('pescado', 'Trucha Mariposa', { id: 'trucha', nombre_comanda: 'TRUCHA MARIPOSA', grupos_opciones: ACOMP_PESCADO });
 
 // PICADAS
 item('picadas', 'Picada Paisa', { descripcion: 'Para 2 personas', grupos_opciones: [g('porcion_picada', 'Porción', 1, 1)] });
