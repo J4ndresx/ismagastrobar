@@ -22,7 +22,7 @@ import { armarMensajePedido, linkWhatsApp } from './utils/whatsapp';
 import { formatCOP } from './utils/formato';
 import { Sheet, Badge, IconBag, IconPlus, IconCheck, IconWhatsApp, IconChevronRight, IconX } from './components/ui';
 
-const USA_NOMBRE = new Set(['menu_del_dia', 'tradicional', 'proteinas', 'a_la_carta', 'picadas', 'bebidas', 'adicionales', 'parrilla_especiales']);
+const USA_NOMBRE = new Set(['menu_del_dia', 'tradicional', 'proteinas', 'a_la_carta', 'pescado', 'asados', 'picadas', 'bebidas', 'adicionales', 'parrilla_especiales']);
 const titulo = (s) => s.toLowerCase().replace(/(^|\s)\S/g, (c) => c.toUpperCase());
 function nombreCliente(item) {
   if (USA_NOMBRE.has(item.categoria_id)) return item.nombre;

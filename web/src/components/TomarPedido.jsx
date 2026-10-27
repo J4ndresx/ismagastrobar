@@ -11,7 +11,7 @@ const IconSearch = (p) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className={p.className}><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
 );
 
-const USA_NOMBRE = new Set(['menu_del_dia', 'tradicional', 'proteinas', 'a_la_carta', 'picadas', 'bebidas', 'adicionales', 'parrilla_especiales']);
+const USA_NOMBRE = new Set(['menu_del_dia', 'tradicional', 'proteinas', 'a_la_carta', 'pescado', 'asados', 'picadas', 'bebidas', 'adicionales', 'parrilla_especiales']);
 // Categorías con tema 'oscuro' (Parrilla y Especiales): fondo negro y precios dorados.
 // Paleta "gris ratón" (como el volante de ISMA): fondo gris oscuro, tarjetas gris medio,
 // títulos crema y precios en pastilla vinotinto.

@@ -133,7 +133,7 @@ const GENERICO = (
 );
 
 // Categorías de ISMA que reutilizan un ícono existente.
-const ALIAS = { menu_del_dia: 'platos', tradicional: 'arroz_paisa', proteinas: 'pinchos', a_la_carta: 'platos', picadas: 'patacon', parrilla_especiales: 'hamburguesas' };
+const ALIAS = { menu_del_dia: 'platos', tradicional: 'arroz_paisa', proteinas: 'pinchos', a_la_carta: 'platos', pescado: 'platos', asados: 'platos', picadas: 'patacon', parrilla_especiales: 'hamburguesas' };
 
 export function IconoCategoria({ id, className = 'h-6 w-6', strokeWidth = 1.75 }) {
   return (

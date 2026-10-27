@@ -104,7 +104,7 @@ const ICONOS = {
 
 // ─── Tablero ────────────────────────────────────────────────────────────
 // `ids`: categorías candidatas en orden. Hoy en Firestore existen: menu_del_dia, tradicional,
-// proteinas, a_la_carta, picadas, parrilla_especiales, bebidas, adicionales.
+// proteinas, pescado, asados (antes a_la_carta, que queda inactiva), picadas, parrilla_especiales, bebidas, adicionales.
 export const TABLERO = [
   { clave: 'desayunos', nombre: 'Desayunos', ids: ['desayunos'] },
   { clave: 'menu_dia', nombre: 'Menú del Día', ids: ['menu_del_dia'], destacado: true },

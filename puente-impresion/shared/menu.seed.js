@@ -73,7 +73,11 @@ export const CATEGORIAS = [
   { id: 'menu_del_dia', nombre: 'Menú del Día', parent_id: null, orden: 1, zona_preparacion: 'cocina', tipo_ui: 'grilla' },
   { id: 'tradicional', nombre: 'Tradicional', parent_id: null, orden: 2, zona_preparacion: 'cocina', tipo_ui: 'grilla' },
   { id: 'proteinas', nombre: 'Proteínas', parent_id: null, orden: 3, zona_preparacion: 'cocina', tipo_ui: 'grilla' },
-  { id: 'a_la_carta', nombre: 'A la Carta', parent_id: null, orden: 4, zona_preparacion: 'cocina', tipo_ui: 'grilla' },
+  // A la Carta se partió en Pescado y Asados (tema 9). Queda inactiva y sin productos para que
+  // `cargar-categoria.mjs a_la_carta` la apague en Firestore; no borrar mientras exista allá.
+  { id: 'a_la_carta', nombre: 'A la Carta', parent_id: null, orden: 4, zona_preparacion: 'cocina', tipo_ui: 'grilla', activo: false },
+  { id: 'pescado', nombre: 'Pescado', parent_id: null, orden: 4.1, zona_preparacion: 'cocina', tipo_ui: 'grilla' },
+  { id: 'asados', nombre: 'Asados', parent_id: null, orden: 4.2, zona_preparacion: 'cocina', tipo_ui: 'grilla' },
   { id: 'picadas', nombre: 'Picadas', parent_id: null, orden: 5, zona_preparacion: 'cocina', tipo_ui: 'grilla' },
   { id: 'bebidas', nombre: 'Bebidas', parent_id: null, orden: 6, zona_preparacion: 'general', tipo_ui: 'grilla' },
   { id: 'adicionales', nombre: 'Adicionales', parent_id: null, orden: 7, zona_preparacion: 'cocina', tipo_ui: 'grilla' },
@@ -203,15 +207,17 @@ item('tradicional', 'Sancocho de Bagre', { id: 'sancocho_bagre', nombre_comanda:
 // PROTEÍNAS
 for (const n of ['Res', 'Cañón de cerdo', 'Pechuga', 'Chicharrón', 'Hígado encebollado', 'Res molida']) item('proteinas', n);
 
-// A LA CARTA — término y acompañamiento obligatorios en carnes rojas de 270 g.
+// ASADOS — término y acompañamiento obligatorios en carnes rojas de 270 g.
 // ⚠️ Supuesto a confirmar con el cliente: Punta de Anca lleva lo mismo que el Churrasco.
 const CARNE_270 = [g('termino_carne', 'Término', 1, 1), g('acompanamiento', 'Acompañamiento', 1, 1)];
-item('a_la_carta', 'Churrasco 270g', { id: 'churrasco', nombre_comanda: 'CHURRASCO 270G', grupos_opciones: CARNE_270 });
-item('a_la_carta', 'Punta de Anca 270g', { id: 'punta_de_anca', nombre_comanda: 'PUNTA ANCA 270G', grupos_opciones: CARNE_270 });
-item('a_la_carta', 'Tilapia 500g', { id: 'tilapia', nombre_comanda: 'TILAPIA 500G' });
-item('a_la_carta', 'Filete de Tilapia', { id: 'filete_tilapia', nombre_comanda: 'FILETE TILAPIA' });
-item('a_la_carta', 'Róbalo Dorado', { id: 'robalo', nombre_comanda: 'ROBALO DORADO' });
-item('a_la_carta', 'Trucha Mariposa', { id: 'trucha', nombre_comanda: 'TRUCHA MARIPOSA' });
+item('asados', 'Churrasco 270g', { id: 'churrasco', nombre_comanda: 'CHURRASCO 270G', grupos_opciones: CARNE_270 });
+item('asados', 'Punta de Anca 270g', { id: 'punta_de_anca', nombre_comanda: 'PUNTA ANCA 270G', grupos_opciones: CARNE_270 });
+
+// PESCADO (mismos ids que cuando estaban en A la Carta: Firestore solo les cambia la categoría)
+item('pescado', 'Tilapia 500g', { id: 'tilapia', nombre_comanda: 'TILAPIA 500G' });
+item('pescado', 'Filete de Tilapia', { id: 'filete_tilapia', nombre_comanda: 'FILETE TILAPIA' });
+item('pescado', 'Róbalo Dorado', { id: 'robalo', nombre_comanda: 'ROBALO DORADO' });
+item('pescado', 'Trucha Mariposa', { id: 'trucha', nombre_comanda: 'TRUCHA MARIPOSA' });
 
 // PICADAS
 item('picadas', 'Picada Paisa', { descripcion: 'Para 2 personas', grupos_opciones: [g('porcion_picada', 'Porción', 1, 1)] });

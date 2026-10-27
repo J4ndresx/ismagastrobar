@@ -22,7 +22,7 @@ const mdd = (extra = {}) => armarMenuDelDia({ sopaDelDia: ['Sancocho de gallina'
 
 await prueba('seed: estructura coherente (categorías, grupos, precios, modificadores del cliente)', () => {
   const cats = new Set(CATEGORIAS.map((c) => c.id));
-  assert.deepEqual(CATEGORIAS.filter((c) => !c.parent_id).map((c) => c.id), ['desayunos', 'menu_del_dia', 'tradicional', 'proteinas', 'a_la_carta', 'picadas', 'bebidas', 'adicionales', 'parrilla_especiales']);
+  assert.deepEqual(CATEGORIAS.filter((c) => !c.parent_id).map((c) => c.id), ['desayunos', 'menu_del_dia', 'tradicional', 'proteinas', 'a_la_carta', 'pescado', 'asados', 'picadas', 'bebidas', 'adicionales', 'parrilla_especiales']);
   // Subcategorías: cuelgan de una categoría raíz, y en Bebidas/Adicionales todo producto tiene la suya.
   for (const c of CATEGORIAS.filter((x) => x.parent_id)) assert.ok(cats.has(c.parent_id) && !CATEGORIAS.find((x) => x.id === c.parent_id).parent_id, c.id);
   for (const i of MENU_ITEMS.filter((x) => ['bebidas', 'adicionales'].includes(x.categoria_id))) {
@@ -43,7 +43,7 @@ await prueba('seed: estructura coherente (categorías, grupos, precios, modifica
   assert.deepEqual(MENU_ITEMS.filter((i) => i.categoria_id === 'tradicional').map((i) => i.nombre), ['Bandejita paisa', 'Cazuela', 'Bandeja paisa', 'Sancocho Trifásico', 'Sancocho de Res o Cerdo', 'Mondongo', 'Sancocho de Bagre']);
   assert.deepEqual(G.carne_sancocho.opciones.map((o) => o.nombre), ['Res', 'Cerdo']);
   // Precios reales entregados por ISMA (2026-10-25): ninguno en 0 en las categorías que ya se pueden cargar.
-  for (const i of MENU_ITEMS.filter((x) => ['desayunos', 'menu_del_dia', 'tradicional', 'a_la_carta', 'parrilla_especiales'].includes(x.categoria_id))) assert.ok(i.precio > 0, `${i.id} sin precio`);
+  for (const i of MENU_ITEMS.filter((x) => ['desayunos', 'menu_del_dia', 'tradicional', 'pescado', 'asados', 'parrilla_especiales'].includes(x.categoria_id))) assert.ok(i.precio > 0, `${i.id} sin precio`);
   assert.deepEqual(MENU_ITEMS.filter((i) => i.categoria_id === 'proteinas').map((i) => i.nombre), ['Res', 'Cañón de cerdo', 'Pechuga', 'Chicharrón', 'Hígado encebollado', 'Res molida']);
   assert.equal(I.red_bull?.nombre, 'Red Bull 269 ml');
   assert.equal(PRECIOS.red_bull, 11000);
@@ -173,6 +173,16 @@ await prueba('desayunos: Desayuno Especial exige proteína/bebida/huevos; una op
   const sinChorizo = { ...G, proteina_desayuno: { ...G.proteina_desayuno, opciones: G.proteina_desayuno.opciones.map((o) => (o.id === 'chorizo' ? { ...o, activo: false } : o)) } };
   const malo = await verificarPedidoApp(pedido([l]), { menu: { items: I, grupos: sinChorizo } });
   assert.equal(malo.verificacion.ok, false);
+});
+
+await prueba('seed: Pescado y Asados separados; A la Carta inactiva y vacía', () => {
+  const ids = (c) => MENU_ITEMS.filter((i) => i.categoria_id === c).map((i) => i.id).sort();
+  assert.deepEqual(ids('pescado'), ['filete_tilapia', 'robalo', 'tilapia', 'trucha']);
+  assert.deepEqual(ids('asados'), ['churrasco', 'punta_de_anca']);
+  assert.deepEqual(ids('a_la_carta'), []);
+  assert.equal(CATEGORIAS.find((c) => c.id === 'a_la_carta').activo, false);
+  const p = Object.fromEntries(MENU_ITEMS.map((i) => [i.id, i.precio]));
+  assert.deepEqual([p.tilapia, p.filete_tilapia, p.robalo, p.trucha, p.churrasco, p.punta_de_anca], [34000, 23000, 21000, 28000, 42000, 42000]);
 });
 
 console.log(`\n${n} pruebas de ISMA OK`);
