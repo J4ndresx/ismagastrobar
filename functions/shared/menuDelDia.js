@@ -85,13 +85,21 @@ export function gruposDesdeMenuDelDia(doc) {
 /**
  * Devuelve el menú con el Menú del Día aplicado: si no está vigente, el ítem
  * `menu_dia` desaparece; si lo está, se inyectan sus cuatro grupos.
+ * Otros platos también pueden usar un grupo del Menú del Día (p. ej. los pescados
+ * piden `mdd_sopa`): si no está vigente, ese grupo se les quita y se venden sin él,
+ * para que no queden pidiendo una opción que no existe.
  * `menu.items` puede ser lista (apps) o mapa id → ítem (Cloud Functions).
  */
 export function aplicarMenuDelDia(menu, doc, ahora = new Date()) {
   if (menuDelDiaVigente(doc, ahora)) return { ...menu, grupos: { ...menu.grupos, ...gruposDesdeMenuDelDia(doc) } };
+  const sinMdd = (i) => {
+    if (!i?.grupos_opciones?.some((r) => r.grupo_id in MDD_GRUPOS)) return i;
+    const grupos_opciones = i.grupos_opciones.filter((r) => !(r.grupo_id in MDD_GRUPOS));
+    return { ...i, grupos_opciones, tipo: grupos_opciones.length ? i.tipo : 'simple' };
+  };
   const items = Array.isArray(menu.items)
-    ? menu.items.filter((i) => i.id !== MDD_ITEM_ID)
-    : Object.fromEntries(Object.entries(menu.items).filter(([id]) => id !== MDD_ITEM_ID));
+    ? menu.items.filter((i) => i.id !== MDD_ITEM_ID).map(sinMdd)
+    : Object.fromEntries(Object.entries(menu.items).filter(([id]) => id !== MDD_ITEM_ID).map(([id, i]) => [id, sinMdd(i)]));
   return { ...menu, items };
 }
 

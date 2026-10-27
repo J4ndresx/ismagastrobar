@@ -185,18 +185,35 @@ await prueba('seed: Pescado y Asados separados; A la Carta inactiva y vacía', (
   assert.deepEqual([p.tilapia, p.filete_tilapia, p.robalo, p.trucha, p.churrasco, p.punta_de_anca], [34000, 23000, 21000, 28000, 42000, 42000]);
 });
 
-await prueba('pescado: acompañamiento obligatorio (uno de dos) y verificado en la nube', async () => {
-  for (const id of ['tilapia', 'filete_tilapia', 'robalo', 'trucha']) {
-    assert.deepEqual(I[id].grupos_opciones, [{ grupo_id: 'acompanamiento_pescado', etiqueta: 'Acompañamiento', min: 1, max: 1 }]);
-    assert.equal(validarSeleccion(I[id], { opciones: {} }).length, 1, `${id} debe exigir acompañamiento`);
-    assert.ok(validarSeleccion(I[id], { opciones: { acompanamiento_pescado: ['con_arroz', 'con_patacon'] } }).length > 0, `${id} no admite los dos`);
-  }
+await prueba('pescado: sopa del Menú del Día + acompañamiento, ambos obligatorios; sin Menú del Día se vende sin sopa', async () => {
+  const PESCADOS = ['tilapia', 'filete_tilapia', 'robalo', 'trucha'];
   assert.deepEqual(G.acompanamiento_pescado.opciones.map((o) => o.id), ['con_arroz', 'con_patacon']);
-  const l = crearLinea(I.trucha, G, { cantidad: 1, opciones: { acompanamiento_pescado: ['con_patacon'] } });
+  // Con Menú del Día vigente: la sopa sale de lo publicado hoy (Sancocho de gallina).
+  const hoy = aplicarMenuDelDia(base, mdd({ sopaDelDia: ['Sancocho de gallina', 'Frijoles'] }), AHORA);
+  for (const id of PESCADOS) {
+    const it = hoy.items[id];
+    assert.deepEqual(it.grupos_opciones.map((r) => [r.grupo_id, r.min, r.max]), [['mdd_sopa', 1, 1], ['acompanamiento_pescado', 1, 1]]);
+    assert.equal(validarSeleccion(it, { opciones: {} }).length, 2, `${id} debe exigir sopa y acompañamiento`);
+    assert.ok(validarSeleccion(it, { opciones: { mdd_sopa: ['frijoles'], acompanamiento_pescado: ['con_arroz', 'con_patacon'] } }).length > 0, `${id} no admite los dos`);
+  }
+  assert.deepEqual(hoy.grupos.mdd_sopa.opciones.map((o) => o.id), ['sancocho_de_gallina', 'frijoles']);
+  const l = crearLinea(hoy.items.trucha, hoy.grupos, { cantidad: 1, opciones: { mdd_sopa: ['frijoles'], acompanamiento_pescado: ['con_patacon'] } });
   assert.equal(l.total, I.trucha.precio);
-  assert.deepEqual(l.opciones.map((o) => [o.grupo_id, o.valores, o.imprimir]), [['acompanamiento_pescado', ['Sopa del menú del día, patacón, ensalada'], true]]);
-  const ok = await verificarPedidoApp(pedido([l]), { menu: { items: I, grupos: G } });
+  assert.deepEqual(l.opciones.map((o) => [o.grupo_id, o.valores, o.imprimir]), [['mdd_sopa', ['Frijoles'], true], ['acompanamiento_pescado', ['Sopa del menú del día, patacón, ensalada'], true]]);
+  const ok = await verificarPedidoApp(pedido([l]), { menu: hoy });
   assert.equal(ok.verificacion.ok, true, ok.verificacion.avisos.join());
+  // Una sopa que no está publicada hoy no se puede pedir.
+  assert.throws(() => crearLinea(hoy.items.trucha, hoy.grupos, { cantidad: 1, opciones: { mdd_sopa: ['lentejas'], acompanamiento_pescado: ['con_arroz'] } }));
+  // Sin Menú del Día (apagado o de ayer): el pescado sigue a la venta y solo pide acompañamiento.
+  const sinMdd = aplicarMenuDelDia(base, mdd({ disponible: false }), AHORA);
+  assert.equal(sinMdd.items.menu_dia, undefined);
+  for (const id of PESCADOS) assert.deepEqual(sinMdd.items[id].grupos_opciones.map((r) => r.grupo_id), ['acompanamiento_pescado']);
+  const l2 = crearLinea(sinMdd.items.tilapia, sinMdd.grupos, { cantidad: 1, opciones: { acompanamiento_pescado: ['con_arroz'] } });
+  assert.equal((await verificarPedidoApp(pedido([l2]), { menu: sinMdd })).verificacion.ok, true);
+  assert.equal(base.items.tilapia.grupos_opciones.length, 2, 'no muta el menú original');
+  // Lista (como en la app/POS) en vez de mapa: mismo resultado.
+  const lista = aplicarMenuDelDia({ ...base, items: ITEMS }, null, AHORA);
+  assert.deepEqual(lista.items.find((x) => x.id === 'robalo').grupos_opciones.map((r) => r.grupo_id), ['acompanamiento_pescado']);
 });
 
 console.log(`\n${n} pruebas de ISMA OK`);

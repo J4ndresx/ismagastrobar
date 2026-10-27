@@ -219,8 +219,10 @@ item('asados', 'Churrasco 270g', { id: 'churrasco', nombre_comanda: 'CHURRASCO 2
 item('asados', 'Punta de Anca 270g', { id: 'punta_de_anca', nombre_comanda: 'PUNTA ANCA 270G', grupos_opciones: CARNE_270 });
 
 // PESCADO (mismos ids que cuando estaban en A la Carta: Firestore solo les cambia la categoría).
+// Sopa: el cliente la escoge entre las sopas publicadas hoy en el Menú del Día (grupo `mdd_sopa`,
+// sale de menu_del_dia/actual). Si hoy no hay Menú del Día vigente, el pescado se vende sin sopa.
 // Acompañamiento obligatorio (min 1, max 1 = elegir exactamente uno).
-const ACOMP_PESCADO = [g('acompanamiento_pescado', 'Acompañamiento', 1, 1)];
+const ACOMP_PESCADO = [g('mdd_sopa', 'Sopa', 1, 1), g('acompanamiento_pescado', 'Acompañamiento', 1, 1)];
 item('pescado', 'Tilapia 500g', { id: 'tilapia', nombre_comanda: 'TILAPIA 500G', grupos_opciones: ACOMP_PESCADO });
 item('pescado', 'Filete de Tilapia', { id: 'filete_tilapia', nombre_comanda: 'FILETE TILAPIA', grupos_opciones: ACOMP_PESCADO });
 item('pescado', 'Róbalo Dorado', { id: 'robalo', nombre_comanda: 'ROBALO DORADO', grupos_opciones: ACOMP_PESCADO });
