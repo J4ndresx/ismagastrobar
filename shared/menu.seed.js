@@ -5,10 +5,14 @@
 // panel (restaurantes/{rid}/menu_del_dia/actual, ver shared/menuDelDia.js).
 // Aquí solo existe el ítem `menu_dia` con sus cuatro grupos obligatorios.
 //
-// ⚠️ PRECIOS: los de Desayunos, Menú del Día, Tradicional y A la Carta son
-// reales (ISMA, 2026-10-25), igual que Bebidas. Adicionales tienen precios de EJEMPLO.
-// Proteínas y Picadas siguen en 0: scripts/cargar-menu.mjs
-// y cargar-categoria.mjs se niegan a cargar mientras haya precios en 0.
+// ⚠️ PRECIOS: reales de ISMA en Desayunos, Menú del Día, Tradicional, Pescado, Asados,
+// Especiales, Picadas, Bebidas y Adicionales (correcciones del 2026-10-31), salvo DOS PROVISIONALES
+// puestos para poder cargar: Sopa/Frijol 12 oz ($8.000) y Pollo Campestre ($24.000).
+// Proteínas siguen en 0: scripts/cargar-menu.mjs y cargar-categoria.mjs se niegan a cargar
+// mientras haya precios en 0.
+//
+// Productos que salen del menú: NO se borran de aquí. Se dejan con `activo: false` para que
+// `cargar-categoria.mjs` los apague en Firestore (el script nunca borra documentos).
 
 import { MDD_ITEM_ID, slugOpcion as slug } from './menuDelDia.js';
 
@@ -24,10 +28,13 @@ export const PRECIOS = {
   sancocho_trifasico: 27000, sancocho_res_cerdo: 22000, mondongo: 22000, sancocho_bagre: 25000,
   // ⚠️ Proteínas: siguen en 0 (ISMA no las incluyó en la lista del 2026-10-25)
   res: 0, canon_de_cerdo: 0, pechuga: 0, chicharron: 0, higado_encebollado: 0, res_molida: 0,
-  // A la Carta (precios reales ISMA, 2026-10-25)
-  churrasco: 42000, punta_de_anca: 42000, tilapia: 34000, filete_tilapia: 23000, robalo: 21000, trucha: 28000,
-  // ⚠️ Picadas: sigue en 0 (pendiente con ISMA, ver duplicado con Parrilla)
-  picada_paisa: 0,
+  // Pescado (precios reales ISMA, 2026-10-25)
+  tilapia: 34000, filete_tilapia: 23000, robalo: 21000, trucha: 28000,
+  // Asados (2026-10-31). ⚠️ pollo_campestre: PROVISIONAL (igual al Cañón), confirmar con ISMA.
+  canon_campestre: 24000, pollo_campestre: 24000, chuzo_cerdo_pollo: 24000,
+  churrasco: 42000, punta_de_anca: 42000, // fuera del menú (activo: false), ver ASADOS
+  // Picadas: precio por persona (ISMA, 2026-10-31)
+  picada_paisa: 20000,
   // Bebidas (lista y precios reales ISMA, 2026-10-25)
   // Cervezas
   cerveza_heineken_269: 5000, cerveza_heineken_zero_269: 5000, cerveza_heineken_473: 6000, cerveza_heineken_330: 5000,
@@ -48,15 +55,14 @@ export const PRECIOS = {
   gaseosa_personal: 4000, gaseosa_1500: 6000,
   // Jugos Hit
   hit_cajita: 2000, hit_botella: 5000,
-  // ⚠️ Adicionales: PRECIOS DE EJEMPLO (puestos para poder cargar). Reemplazar por los reales de ISMA.
-  // Adicionales (por subcategoría)
-  adic_res: 9000, adic_cerdo: 8000, adic_pollo: 8000, adic_chicharron: 8000, adic_chorizo: 5000,
-  adic_queso: 4000, adic_tocineta: 4000, adic_huevo: 2500,
-  adic_maduro: 4000, adic_patacon: 4000, adic_yuca: 4000, adic_papas: 5000, adic_arroz: 3000, adic_arepa: 2000, ensalada: 4000, pico_de_gallo: 3000,
-  adic_chimichurri: 2000, adic_tartara: 2000, adic_ajo: 2000, adic_bbq: 2000, adic_hogao: 2000,
-  // Parrilla y Especiales (tarde/noche)
+  // Adicionales (lista real ISMA, 2026-10-31)
+  adic_mazamorra: 3500, adic_claro: 3000, adic_guandolo: 2000, adic_jugo_dia: 2000,
+  adic_arepa_tela: 1000, adic_arepa_redonda: 500, adic_arroz: 3000,
+  // ⚠️ adic_sopa_frijol_12: PROVISIONAL $8.000 para poder cargar. Validar el precio real con ISMA.
+  adic_sopa_frijol_12: 8000, adic_sopa_frijol_24: 12000, adic_sancocho_24: 15000,
+  // Especiales (tarde/noche)
   patacon_montanero_isma: 24000, salchipapa_especial: 22000, hamburguesa_artesanal: 27000,
-  chuzo_cerdo_pollo: 24000, canon_campestre: 24000, asado_premium: 38000, picada_paisa_especial: 40000,
+  asado_premium: 38000, picada_paisa_especial: 40000, // fuera del menú (activo: false)
 };
 
 // ─── Zonas de preparación (a dónde se imprime cada comanda) ────────────
@@ -81,9 +87,9 @@ export const CATEGORIAS = [
   { id: 'picadas', nombre: 'Picadas', parent_id: null, orden: 5, zona_preparacion: 'cocina', tipo_ui: 'grilla' },
   { id: 'bebidas', nombre: 'Bebidas', parent_id: null, orden: 6, zona_preparacion: 'general', tipo_ui: 'grilla' },
   { id: 'adicionales', nombre: 'Adicionales', parent_id: null, orden: 7, zona_preparacion: 'cocina', tipo_ui: 'grilla' },
-  // Platos de la tarde/noche. tema 'oscuro': el POS y la app la muestran en fondo negro con precios dorados.
+  // Platos de la tarde/noche (desde 2026-10-31 solo Especiales; la parrilla pasó a Asados). tema 'oscuro': el POS y la app la muestran en fondo negro con precios dorados.
   // orden 5.5 = queda justo después de Picadas sin cambiar el orden de las demás.
-  { id: 'parrilla_especiales', nombre: 'Parrilla y Especiales', parent_id: null, orden: 5.5, zona_preparacion: 'cocina', tipo_ui: 'grilla', tema: 'oscuro' },
+  { id: 'parrilla_especiales', nombre: 'Especiales', parent_id: null, orden: 5.5, zona_preparacion: 'cocina', tipo_ui: 'grilla', tema: 'oscuro' },
 
   // ── Subcategorías (parent_id = categoría madre). La app del cliente las muestra como
   //    pestañas dentro de la categoría; el POS ya las mostraba como pestañas.
@@ -97,10 +103,9 @@ export const CATEGORIAS = [
     ['jugos_hit', 'Jugos Hit'],
   ].map(([id, nombre, extra], k) => ({ id, nombre, parent_id: 'bebidas', orden: k + 1, zona_preparacion: 'general', tipo_ui: 'grilla', ...extra })),
   ...[
-    ['adic_carnes', 'Porciones de carne'],
-    ['adic_extras', 'Queso, tocineta y huevo'],
+    ['adic_bebidas', 'Bebidas de la casa'],
     ['adic_acompanamientos', 'Acompañamientos'],
-    ['adic_salsas', 'Salsas'],
+    ['adic_sopas', 'Sopas y sancocho'],
   ].map(([id, nombre], k) => ({ id, nombre, parent_id: 'adicionales', orden: k + 1, zona_preparacion: 'cocina', tipo_ui: 'grilla' })),
 ].map((c) => ({ activo: true, ...c }));
 
@@ -110,20 +115,21 @@ const op = (nombre, extra = {}) => ({ id: slug(nombre), nombre, activo: true, pr
 
 export const GRUPOS_OPCIONES = [
   { id: 'termino_carne', nombre: 'Término', opciones: [op('3/4'), op('Bien asado')] },
-  { id: 'acompanamiento', nombre: 'Acompañamiento', opciones: [op('Papas'), op('Yuca'), op('Ensalada')] },
-  // Pescados (tema 9): el cliente elige uno de los dos acompañamientos.
-  { id: 'acompanamiento_pescado', nombre: 'Acompañamiento', opciones: [
-    op('Arroz, ensalada, tajada de maduro, arepa', { id: 'con_arroz' }),
-    op('Patacón, ensalada', { id: 'con_patacon' }),
-  ] },
-  { id: 'porcion_picada', nombre: 'Porción', opciones: [op('Para 2 personas')] },
+  // Pescado y Asados (ISMA, 2026-10-31): mismo acompañamiento; la ensalada cambia.
+  { id: 'acompanamiento_plato', nombre: 'Acompañamiento', opciones: [op('Papas a la francesa'), op('Yuca frita'), op('Patacón')] },
+  { id: 'ensalada_pescado', nombre: 'Ensalada', opciones: [op('Pico de gallo'), op('Ensalada del día')] },
+  { id: 'ensalada_asado', nombre: 'Ensalada', opciones: [op('Pico de gallo'), op('Lechuga dulce')] },
+  { id: 'arepa_asado', nombre: 'Arepa', opciones: [op('Arepa y queso'), op('Arepa y hogao')] },
+  // Adicionales: el vaso de 12/24 oz puede ser sopa o frijol.
+  { id: 'sopa_o_frijol', nombre: 'Sopa o frijol', opciones: [op('Sopa del día'), op('Frijol')] },
   { id: 'corte_asado', nombre: 'Corte', opciones: [op('Punta de anca'), op('Churrasco')] },
   { id: 'carne_chuzo', nombre: 'Carne', opciones: [op('Cerdo'), op('Pollo')] },
   { id: 'carne_sancocho', nombre: 'Carne', opciones: [op('Res'), op('Cerdo')] },
-  // Desayunos (listas confirmadas por ISMA el 2026-10-25). El admin apaga una opción (p. ej. "no hay chorizo") desde Agotados → Opciones.
-  { id: 'proteina_desayuno', nombre: 'Proteína', opciones: [op('Res'), op('Cerdo'), op('Pechuga'), op('Chicharrón'), op('Hígado encebollado'), op('Res molida'), op('Chorizo'), op('Morcilla')] },
-  // El id sigue siendo bebida_caliente para no dejar un grupo huérfano en Firestore; incluye el jugo frío.
-  { id: 'bebida_caliente', nombre: 'Bebida', opciones: [op('Aromática'), op('Café'), op('Tinto'), op('Chocolate oscuro'), op('Chocolate en leche'), op('Jugo frío del día')] },
+  // Desayunos (listas confirmadas por ISMA el 2026-10-25; proteína y bebidas actualizadas el 2026-10-31). El admin apaga una opción (p. ej. "no hay chorizo") desde Agotados → Opciones.
+  { id: 'proteina_desayuno', nombre: 'Proteína', opciones: [op('Res'), op('Cerdo'), op('Chicharrón'), op('Pechuga'), op('Chorizo'), op('Morcilla'), op('Hígado encebollado'), op('Res molida')] },
+  // El id sigue siendo bebida_caliente para no dejar un grupo huérfano en Firestore; incluye la bebida fría.
+  // La usan todos los desayunos que traen bebida (Sencillo, Especial, Calentados y Sándwich).
+  { id: 'bebida_caliente', nombre: 'Bebida', opciones: [op('Aromática'), op('Café en leche'), op('Chocolate en leche'), op('Chocolate sin leche'), op('Tinto'), op('Bebida fría / jugo / guandolo', { id: 'bebida_fria' })] },
   { id: 'huevos_al_gusto', nombre: 'Huevos', opciones: [op('Fritos'), op('Revueltos'), op('Revueltos con aliños'), op('Pericos')] },
   // Bebidas: sabores/estilos (el admin apaga el que se acabe desde Agotados → Opciones).
   { id: 'estilo_3_cordilleras', nombre: 'Estilo', opciones: [op('Mulata'), op('Rosé'), op('Blanca'), op('Mestiza')] },
@@ -166,7 +172,7 @@ function item(catId, nombre, extra = {}) {
     modificadores: extra.modificadores || [],
     precio: PRECIOS[id],
     orden: ordenPorCat[llaveOrden],
-    activo: true,
+    activo: extra.activo !== false,
     ...(extra.aviso ? { aviso: extra.aviso } : {}),
     ...(PRECIOS[id] === 0 ? { precio_por_confirmar: true } : {}),
   });
@@ -176,20 +182,22 @@ function item(catId, nombre, extra = {}) {
 // "Huevos al gusto" se pide como opción obligatoria para que la cocina sepa cómo prepararlos.
 const HUEVOS = g('huevos_al_gusto', 'Huevos', 1, 1);
 const BEBIDA_CALIENTE = g('bebida_caliente', 'Bebida', 1, 1);
+const PROTEINA_DESAYUNO = g('proteina_desayuno', 'Proteína', 1, 1);
 item('desayunos', 'Desayuno Sencillo', { id: 'desayuno_sencillo', nombre_comanda: 'DESAYUNO SENCILLO',
   descripcion: 'Dos huevos al gusto, arepa tela antioqueña, quesito en tajadas y bebida a elección.',
   grupos_opciones: [BEBIDA_CALIENTE, HUEVOS] });
 item('desayunos', 'Desayuno Especial', { id: 'desayuno_especial', nombre_comanda: 'DESAYUNO ESPECIAL',
   descripcion: 'Dos huevos al gusto, proteína a elección, arepa tela antioqueña, quesito en tajadas y bebida a elección.',
-  grupos_opciones: [g('proteina_desayuno', 'Proteína', 1, 1), BEBIDA_CALIENTE, HUEVOS] });
+  grupos_opciones: [PROTEINA_DESAYUNO, BEBIDA_CALIENTE, HUEVOS] });
 item('desayunos', 'Calentado Sencillo', { id: 'calentado_sencillo', nombre_comanda: 'CALENTADO SENCILLO',
-  descripcion: 'Frijoles, arroz, carne molida, dos huevos al gusto, arepa tela antioqueña, quesito en tajadas y tajada de maduro.',
-  grupos_opciones: [HUEVOS] });
+  descripcion: 'Frijoles, arroz, dos huevos al gusto, arepa tela antioqueña, quesito en tajadas y bebida a elección. Sin proteína.',
+  grupos_opciones: [BEBIDA_CALIENTE, HUEVOS] });
 item('desayunos', 'Calentado Completo', { id: 'calentado_completo', nombre_comanda: 'CALENTADO COMPLETO',
-  descripcion: 'Frijoles, arroz, carne molida, chicharrón crocante, dos huevos al gusto, arepa tela antioqueña, quesito en tajadas y tajada de maduro.',
-  grupos_opciones: [HUEVOS] });
+  descripcion: 'Frijoles, arroz, proteína a elección, dos huevos al gusto, arepa tela antioqueña, quesito en tajadas, tajada de maduro y bebida a elección.',
+  grupos_opciones: [PROTEINA_DESAYUNO, BEBIDA_CALIENTE, HUEVOS] });
 item('desayunos', 'Sándwich Artesanal de Atún Premium', { id: 'sandwich_atun', nombre_comanda: 'SANDWICH ATUN',
-  descripcion: 'Pan artesanal con queso, relleno de atún premium de alta calidad, dos huevos batidos, aguacate fresco, lechuga y tomate. Acompañado de una taza de chocolate caliente.' });
+  descripcion: 'Pan artesanal con queso, relleno de atún premium de alta calidad, dos huevos batidos, aguacate fresco, lechuga y tomate. Con bebida a elección.',
+  grupos_opciones: [BEBIDA_CALIENTE] });
 
 // MENÚ DEL DÍA — sopa, proteína, ensalada y bebida obligatorias; sus opciones las pone el dueño cada día.
 item('menu_del_dia', 'Menú del Día', {
@@ -212,24 +220,36 @@ item('tradicional', 'Sancocho de Bagre', { id: 'sancocho_bagre', nombre_comanda:
 // PROTEÍNAS
 for (const n of ['Res', 'Cañón de cerdo', 'Pechuga', 'Chicharrón', 'Hígado encebollado', 'Res molida']) item('proteinas', n);
 
-// ASADOS — término y acompañamiento obligatorios en carnes rojas de 270 g.
-// ⚠️ Supuesto a confirmar con el cliente: Punta de Anca lleva lo mismo que el Churrasco.
-const CARNE_270 = [g('termino_carne', 'Término', 1, 1), g('acompanamiento', 'Acompañamiento', 1, 1)];
-item('asados', 'Churrasco 270g', { id: 'churrasco', nombre_comanda: 'CHURRASCO 270G', grupos_opciones: CARNE_270 });
-item('asados', 'Punta de Anca 270g', { id: 'punta_de_anca', nombre_comanda: 'PUNTA ANCA 270G', grupos_opciones: CARNE_270 });
+// ASADOS (lista de ISMA, 2026-10-31): acompañamiento, ensalada y arepa obligatorios (una de cada uno).
+// Cañón y Chuzo venían de Parrilla y Especiales: mismos ids, la carga solo les cambia la categoría.
+const ACOMP = g('acompanamiento_plato', 'Acompañamiento', 1, 1);
+const ASADO = [ACOMP, g('ensalada_asado', 'Ensalada', 1, 1), g('arepa_asado', 'Arepa', 1, 1)];
+item('asados', 'Cañón de Cerdo Campestre', { id: 'canon_campestre', nombre_comanda: 'CANON CAMPESTRE',
+  descripcion: 'Con acompañamiento, ensalada y arepa a elección.', grupos_opciones: ASADO });
+item('asados', 'Pollo Campestre', { id: 'pollo_campestre', nombre_comanda: 'POLLO CAMPESTRE',
+  descripcion: 'Con acompañamiento, ensalada y arepa a elección.', grupos_opciones: ASADO });
+item('asados', 'Chuzo de Cerdo / Pollo', { id: 'chuzo_cerdo_pollo', nombre_comanda: 'CHUZO',
+  descripcion: 'Con acompañamiento, ensalada y arepa a elección.',
+  grupos_opciones: [g('carne_chuzo', 'Carne', 1, 1), ...ASADO] });
+// Fuera del menú (no están en la lista de Asados de ISMA del 2026-10-31). Para volver a venderlos,
+// quitar `activo: false` y recargar `asados`.
+const CARNE_270 = [g('termino_carne', 'Término', 1, 1), ACOMP];
+item('asados', 'Churrasco 270g', { id: 'churrasco', nombre_comanda: 'CHURRASCO 270G', grupos_opciones: CARNE_270, activo: false });
+item('asados', 'Punta de Anca 270g', { id: 'punta_de_anca', nombre_comanda: 'PUNTA ANCA 270G', grupos_opciones: CARNE_270, activo: false });
 
 // PESCADO (mismos ids que cuando estaban en A la Carta: Firestore solo les cambia la categoría).
 // Sopa: el cliente la escoge entre las sopas publicadas hoy en el Menú del Día (grupo `mdd_sopa`,
 // sale de menu_del_dia/actual). Si hoy no hay Menú del Día vigente, el pescado se vende sin sopa.
-// Acompañamiento obligatorio (min 1, max 1 = elegir exactamente uno).
-const ACOMP_PESCADO = [g('mdd_sopa', 'Sopa', 1, 1), g('acompanamiento_pescado', 'Acompañamiento', 1, 1)];
+// Acompañamiento y ensalada obligatorios (min 1, max 1 = elegir exactamente uno), ISMA 2026-10-31.
+const ACOMP_PESCADO = [g('mdd_sopa', 'Sopa', 1, 1), ACOMP, g('ensalada_pescado', 'Ensalada', 1, 1)];
 item('pescado', 'Tilapia 500g', { id: 'tilapia', nombre_comanda: 'TILAPIA 500G', grupos_opciones: ACOMP_PESCADO });
 item('pescado', 'Filete de Tilapia', { id: 'filete_tilapia', nombre_comanda: 'FILETE TILAPIA', grupos_opciones: ACOMP_PESCADO });
 item('pescado', 'Róbalo Dorado', { id: 'robalo', nombre_comanda: 'ROBALO DORADO', grupos_opciones: ACOMP_PESCADO });
 item('pescado', 'Trucha Mariposa', { id: 'trucha', nombre_comanda: 'TRUCHA MARIPOSA', grupos_opciones: ACOMP_PESCADO });
 
 // PICADAS
-item('picadas', 'Picada Paisa', { descripcion: 'Para 2 personas', grupos_opciones: [g('porcion_picada', 'Porción', 1, 1)] });
+// Precio por persona (ISMA, 2026-10-31): la cantidad del pedido = número de personas.
+item('picadas', 'Picada Paisa', { nombre_comanda: 'PICADA PAISA x PERSONA', descripcion: 'Precio por persona.' });
 
 // BEBIDAS — lista real de ISMA (2026-10-25). Sabores y estilos van como opción obligatoria.
 const beb = (sub, lista) => lista.forEach(([nombre, id, extra = {}]) => item('bebidas', nombre, { id, sub, ...extra }));
@@ -288,24 +308,21 @@ beb('jugos_hit', [
   ['Hit Botella 500 ml', 'hit_botella', sabor('sabor_hit_botella')],
 ]);
 
-// ADICIONALES — extras que el cliente suma a su pedido. ⚠️ EJEMPLO: confirmar con ISMA.
+// ADICIONALES — lista real de ISMA (2026-10-31). Reemplaza los 21 de ejemplo (nunca se cargaron).
 const adic = (sub, lista) => lista.forEach(([nombre, id, extra = {}]) => item('adicionales', nombre, { id, sub, ...extra }));
-adic('adic_carnes', [
-  ['Porción de res', 'adic_res'], ['Porción de cerdo', 'adic_cerdo'], ['Porción de pollo', 'adic_pollo'],
-  ['Porción de chicharrón', 'adic_chicharron'], ['Chorizo', 'adic_chorizo'],
+adic('adic_bebidas', [
+  ['Mazamorra', 'adic_mazamorra'], ['Claro', 'adic_claro'], ['Guandolo', 'adic_guandolo'], ['Jugo del día', 'adic_jugo_dia'],
 ]);
-adic('adic_extras', [['Queso', 'adic_queso'], ['Tocineta', 'adic_tocineta'], ['Huevo frito', 'adic_huevo']]);
 adic('adic_acompanamientos', [
-  ['Plátano maduro', 'adic_maduro'], ['Patacón', 'adic_patacon'], ['Yuca', 'adic_yuca'],
-  ['Papas a la francesa', 'adic_papas'], ['Arroz', 'adic_arroz'], ['Arepa', 'adic_arepa'],
-  ['Ensalada', 'ensalada'], ['Pico de gallo', 'pico_de_gallo'],
+  ['Arepa tela', 'adic_arepa_tela'], ['Arepa redonda pequeña', 'adic_arepa_redonda'], ['Arroz (1 porción)', 'adic_arroz'],
 ]);
-adic('adic_salsas', [
-  ['Chimichurri', 'adic_chimichurri'], ['Tártara', 'adic_tartara'], ['Salsa de ajo', 'adic_ajo'],
-  ['BBQ', 'adic_bbq'], ['Hogao', 'adic_hogao'],
+adic('adic_sopas', [
+  ['Sopa o Frijol 12 oz', 'adic_sopa_frijol_12', { nombre_comanda: 'SOPA/FRIJOL 12OZ', grupos_opciones: [g('sopa_o_frijol', 'Sopa o frijol', 1, 1)] }],
+  ['Sopa o Frijol 24 oz', 'adic_sopa_frijol_24', { nombre_comanda: 'SOPA/FRIJOL 24OZ', grupos_opciones: [g('sopa_o_frijol', 'Sopa o frijol', 1, 1)] }],
+  ['Sancocho de Res o Cerdo 24 oz', 'adic_sancocho_24', { nombre_comanda: 'SANCOCHO 24OZ', grupos_opciones: [g('carne_sancocho', 'Carne', 1, 1)] }],
 ]);
 
-// PARRILLA Y ESPECIALES (tarde/noche)
+// ESPECIALES (tarde/noche). Lista de ISMA del 2026-10-31: Patacón Montañero, Salchipapa y Hamburguesa.
 const PE = 'parrilla_especiales';
 item(PE, 'Patacón Montañero ISMA', { id: 'patacon_montanero_isma', nombre_comanda: 'PATACON MONTANERO',
   descripcion: 'Trozos de cerdo, trozos de chorizo de ternera, queso, maíz tierno, adición hogao y tiras de papa.' });
@@ -313,16 +330,11 @@ item(PE, 'Salchipapa Especial', { id: 'salchipapa_especial', nombre_comanda: 'SA
   descripcion: 'Papas a la francesa, trozos de pechuga de cerdo, trozos de chorizo de ternera, huevo, queso y salsas.' });
 item(PE, 'Hamburguesa Artesanal', { id: 'hamburguesa_artesanal', nombre_comanda: 'HAMBURGUESA ARTESANAL',
   descripcion: 'Pan artesanal, gratinada lechuga, carne 150g, tocineta, salsa de la casa, papas a la francesa.' });
-item(PE, 'Chuzo de Cerdo / Pollo', { id: 'chuzo_cerdo_pollo', nombre_comanda: 'CHUZO',
-  descripcion: 'Papas a la francesa, ensalada mixta y salsas.',
-  grupos_opciones: [g('carne_chuzo', 'Carne', 1, 1)] });
-item(PE, 'Cañón Campestre', { id: 'canon_campestre', nombre_comanda: 'CANON CAMPESTRE',
-  descripcion: 'Papas a la francesa, arroz, ensalada y ensalada.' });
+// Fuera del menú (activo: false): Asado Premium y la Picada Paisa duplicada (queda la de Picadas).
 item(PE, 'Asado Premium', { id: 'asado_premium', nombre_comanda: 'ASADO PREMIUM 270G',
   descripcion: 'Punta de anca o churrasco a 270 gramos. (Papas a la francesa y yuca crocante / pasteles). Arepa, queso y ensalada.',
-  grupos_opciones: [g('corte_asado', 'Corte', 1, 1), g('termino_carne', 'Término', 1, 1)] });
-// Id distinto al de Picadas → 'picada_paisa' (esa no se toca).
+  grupos_opciones: [g('corte_asado', 'Corte', 1, 1), g('termino_carne', 'Término', 1, 1)], activo: false });
 item(PE, 'Picada Paisa', { id: 'picada_paisa_especial', nombre_comanda: 'PICADA PAISA',
-  descripcion: 'Cerdo, chorizo, chicharrón, morcilla, patacón, arepa y hogao.', aviso: 'Para 2 personas' });
+  descripcion: 'Cerdo, chorizo, chicharrón, morcilla, patacón, arepa y hogao.', aviso: 'Para 2 personas', activo: false });
 
 export const MENU_ITEMS = items;
