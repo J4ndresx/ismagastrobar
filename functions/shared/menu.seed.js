@@ -60,9 +60,9 @@ export const PRECIOS = {
   adic_arepa_tela: 1000, adic_arepa_redonda: 500, adic_arroz: 3000,
   // ⚠️ adic_sopa_frijol_12: PROVISIONAL $8.000 para poder cargar. Validar el precio real con ISMA.
   adic_sopa_frijol_12: 8000, adic_sopa_frijol_24: 12000, adic_sancocho_24: 15000,
-  // Especiales (tarde/noche)
+  // Parrilla y Especiales (tarde/noche)
   patacon_montanero_isma: 24000, salchipapa_especial: 22000, hamburguesa_artesanal: 27000,
-  asado_premium: 38000, picada_paisa_especial: 40000, // fuera del menú (activo: false)
+  asado_premium: 38000, picada_paisa_especial: 40000,
 };
 
 // ─── Zonas de preparación (a dónde se imprime cada comanda) ────────────
@@ -87,9 +87,9 @@ export const CATEGORIAS = [
   { id: 'picadas', nombre: 'Picadas', parent_id: null, orden: 5, zona_preparacion: 'cocina', tipo_ui: 'grilla' },
   { id: 'bebidas', nombre: 'Bebidas', parent_id: null, orden: 6, zona_preparacion: 'general', tipo_ui: 'grilla' },
   { id: 'adicionales', nombre: 'Adicionales', parent_id: null, orden: 7, zona_preparacion: 'cocina', tipo_ui: 'grilla' },
-  // Platos de la tarde/noche (desde 2026-10-31 solo Especiales; la parrilla pasó a Asados). tema 'oscuro': el POS y la app la muestran en fondo negro con precios dorados.
+  // Platos de la tarde/noche. tema 'oscuro': el POS y la app la muestran en fondo negro con precios dorados.
   // orden 5.5 = queda justo después de Picadas sin cambiar el orden de las demás.
-  { id: 'parrilla_especiales', nombre: 'Especiales', parent_id: null, orden: 5.5, zona_preparacion: 'cocina', tipo_ui: 'grilla', tema: 'oscuro' },
+  { id: 'parrilla_especiales', nombre: 'Parrilla y Especiales', parent_id: null, orden: 5.5, zona_preparacion: 'cocina', tipo_ui: 'grilla', tema: 'oscuro' },
 
   // ── Subcategorías (parent_id = categoría madre). La app del cliente las muestra como
   //    pestañas dentro de la categoría; el POS ya las mostraba como pestañas.
@@ -322,7 +322,8 @@ adic('adic_sopas', [
   ['Sancocho de Res o Cerdo 24 oz', 'adic_sancocho_24', { nombre_comanda: 'SANCOCHO 24OZ', grupos_opciones: [g('carne_sancocho', 'Carne', 1, 1)] }],
 ]);
 
-// ESPECIALES (tarde/noche). Lista de ISMA del 2026-10-31: Patacón Montañero, Salchipapa y Hamburguesa.
+// PARRILLA Y ESPECIALES (tarde/noche). Sin cambios: Patacón Montañero, Salchipapa y Hamburguesa
+// coinciden con la lista de ISMA del 2026-10-31. Cañón y Chuzo pasaron a ASADOS (lista de Asados de ISMA).
 const PE = 'parrilla_especiales';
 item(PE, 'Patacón Montañero ISMA', { id: 'patacon_montanero_isma', nombre_comanda: 'PATACON MONTANERO',
   descripcion: 'Trozos de cerdo, trozos de chorizo de ternera, queso, maíz tierno, adición hogao y tiras de papa.' });
@@ -330,11 +331,10 @@ item(PE, 'Salchipapa Especial', { id: 'salchipapa_especial', nombre_comanda: 'SA
   descripcion: 'Papas a la francesa, trozos de pechuga de cerdo, trozos de chorizo de ternera, huevo, queso y salsas.' });
 item(PE, 'Hamburguesa Artesanal', { id: 'hamburguesa_artesanal', nombre_comanda: 'HAMBURGUESA ARTESANAL',
   descripcion: 'Pan artesanal, gratinada lechuga, carne 150g, tocineta, salsa de la casa, papas a la francesa.' });
-// Fuera del menú (activo: false): Asado Premium y la Picada Paisa duplicada (queda la de Picadas).
 item(PE, 'Asado Premium', { id: 'asado_premium', nombre_comanda: 'ASADO PREMIUM 270G',
   descripcion: 'Punta de anca o churrasco a 270 gramos. (Papas a la francesa y yuca crocante / pasteles). Arepa, queso y ensalada.',
-  grupos_opciones: [g('corte_asado', 'Corte', 1, 1), g('termino_carne', 'Término', 1, 1)], activo: false });
+  grupos_opciones: [g('corte_asado', 'Corte', 1, 1), g('termino_carne', 'Término', 1, 1)] });
 item(PE, 'Picada Paisa', { id: 'picada_paisa_especial', nombre_comanda: 'PICADA PAISA',
-  descripcion: 'Cerdo, chorizo, chicharrón, morcilla, patacón, arepa y hogao.', aviso: 'Para 2 personas', activo: false });
+  descripcion: 'Cerdo, chorizo, chicharrón, morcilla, patacón, arepa y hogao.', aviso: 'Para 2 personas' });
 
 export const MENU_ITEMS = items;

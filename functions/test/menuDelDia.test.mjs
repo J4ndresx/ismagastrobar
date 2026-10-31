@@ -190,13 +190,13 @@ await prueba('desayunos: Desayuno Especial exige proteína/bebida/huevos; una op
   assert.equal(malo.verificacion.ok, false);
 });
 
-await prueba('seed: Pescado, Asados y Especiales según ISMA (2026-10-31); lo que sale queda inactivo', () => {
+await prueba('seed: Pescado, Asados y Especiales según ISMA (2026-10-31); lo que sale de Asados queda inactivo', () => {
   const ids = (c, activo = true) => MENU_ITEMS.filter((i) => i.categoria_id === c && i.activo === activo).map((i) => i.id).sort();
   assert.deepEqual(ids('pescado'), ['filete_tilapia', 'robalo', 'tilapia', 'trucha']);
   assert.deepEqual(ids('asados'), ['canon_campestre', 'chuzo_cerdo_pollo', 'pollo_campestre']);
   assert.deepEqual(ids('asados', false), ['churrasco', 'punta_de_anca']);
-  assert.deepEqual(ids('parrilla_especiales'), ['hamburguesa_artesanal', 'patacon_montanero_isma', 'salchipapa_especial']);
-  assert.deepEqual(ids('parrilla_especiales', false), ['asado_premium', 'picada_paisa_especial']);
+  assert.deepEqual(ids('parrilla_especiales'), ['asado_premium', 'hamburguesa_artesanal', 'patacon_montanero_isma', 'picada_paisa_especial', 'salchipapa_especial']);
+  assert.equal(CATEGORIAS.find((c) => c.id === 'parrilla_especiales').nombre, 'Parrilla y Especiales');
   assert.equal(vendible(I.churrasco), false);
   assert.deepEqual(ids('a_la_carta'), []);
   assert.equal(CATEGORIAS.find((c) => c.id === 'a_la_carta').activo, false);
